@@ -1,26 +1,198 @@
 @import "tailwindcss";
 
+/* ── Raw CSS custom properties (used by inline styles & non-Tailwind CSS) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --hb-primary:        #334266;
+  --hb-primary-dark:   #1F2A45;
+  --hb-accent:         #DBA03A;
+  --hb-terracotta:     #C65A3A;
+  --hb-marigold:       #F28C38;
+  --hb-dusty-blue:     #7FA3B6;
+  --hb-sage:           #9DB28F;
+  --hb-teal:           #4C8A8B;
+  --hb-light:          #F0E5D2;
+  --hb-bg:             #F6F3EC;
+  --hb-surface:        #FBF8F1;
+  --hb-surface-alt:    #FFFFFF;
+  --hb-sand:           #E6DCC6;
+  --hb-hairline:       #E8DFCB;
+  --hb-text:           #333333;
+  --hb-muted:          #8A7E6B;
+  --hb-danger:         #C65A3A;
+  --hb-warn:           #F28C38;
+  --hb-success:        #9DB28F;
+
+  --hb-member-maya:        #4C8A8B;  --hb-member-maya-soft:  #DDEAEB;
+  --hb-member-david:       #334266;  --hb-member-david-soft: #DCE0EB;
+  --hb-member-sofia:       #C65A3A;  --hb-member-sofia-soft: #F2D9CF;
+  --hb-member-mateo:       #DBA03A;  --hb-member-mateo-soft: #F4E4C7;
+  --hb-member-lola:        #F28C38;  --hb-member-lola-soft:  #FCDCBE;
+
+  --hb-shadow-card:   0 2px 8px rgba(51,66,102,0.06);
+  --hb-shadow-fab:    0 8px 24px rgba(219,160,58,0.38);
+  --hb-shadow-sheet:  0 -8px 32px rgba(31,42,69,0.18);
+  --hb-shadow-tabbar: 0 6px 24px rgba(51,66,102,0.08);
+
+  --hb-ease-state:  cubic-bezier(0.4, 0, 0.2, 1);
+  --hb-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --hb-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Tailwind v4 theme ─────────────────────────────────────────────────── */
+@theme {
+  /* Brand */
+  --color-primary:        #334266;
+  --color-primary-dark:   #1F2A45;
+  --color-accent:         #DBA03A;
+  --color-terracotta:     #C65A3A;
+  --color-marigold:       #F28C38;
+  --color-dusty-blue:     #7FA3B6;
+  --color-sage:           #9DB28F;
+  --color-teal:           #4C8A8B;
+
+  /* Neutrals */
+  --color-light:          #F0E5D2;
+  --color-bg:             #F6F3EC;
+  --color-surface:        #FBF8F1;
+  --color-surface-alt:    #FFFFFF;
+  --color-sand:           #E6DCC6;
+  --color-hairline:       #E8DFCB;
+  --color-ink:            #333333;
+  --color-muted:          #8A7E6B;
+
+  /* Semantic */
+  --color-danger:         #C65A3A;
+  --color-warning:        #DBA03A;
+  --color-warn:           #F28C38;
+  --color-success:        #9DB28F;
+
+  /* Member */
+  --color-member-maya:        #4C8A8B;
+  --color-member-maya-soft:   #DDEAEB;
+  --color-member-david:       #334266;
+  --color-member-david-soft:  #DCE0EB;
+  --color-member-sofia:       #C65A3A;
+  --color-member-sofia-soft:  #F2D9CF;
+  --color-member-mateo:       #DBA03A;
+  --color-member-mateo-soft:  #F4E4C7;
+  --color-member-lola:        #F28C38;
+  --color-member-lola-soft:   #FCDCBE;
+
+  /* Spacing */
+  --spacing-safe-top: 62px;
+  --spacing-safe-bot: 34px;
+  --spacing-tab-h:    64px;
+  --spacing-touch:    44px;
+
+  /* Radius */
+  --radius-chip:    8px;
+  --radius-card:    16px;
+  --radius-card-lg: 20px;
+  --radius-sheet:   24px;
+  --radius-pill:    999px;
+
+  /* Shadows */
+  --shadow-card:   0 2px 8px rgba(51,66,102,0.06);
+  --shadow-fab:    0 8px 24px rgba(219,160,58,0.38);
+  --shadow-sheet:  0 -8px 32px rgba(31,42,69,0.18);
+  --shadow-tabbar: 0 6px 24px rgba(51,66,102,0.08);
+
+  /* Font */
+  --font-sans: Inter, -apple-system, system-ui, sans-serif;
+
+  /* Custom text sizes */
+  --text-display: 28px;
+  --text-h1:      26px;
+  --text-h2:      22px;
+  --text-h3:      18px;
+  --text-body:    15px;
+  --text-label:   11px;
+
+  /* Animations */
+  --animate-shimmer:    shimmer 1.4s ease-in-out infinite;
+  --animate-pop-check:  pop-check 320ms cubic-bezier(0.34,1.56,0.64,1);
+  --animate-ring-out:   ring-out 500ms ease-out forwards;
+  --animate-sheet-in:   sheet-in 300ms cubic-bezier(0.16,1,0.3,1);
+  --animate-pop-bg:     pop-bg 300ms ease-out;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Keyframes ─────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
+@keyframes pop-check {
+  0%   { transform: scale(0);   opacity: 0; }
+  60%  { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes pop-bg {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes ring-out {
+  0%   { transform: scale(0.6); opacity: 0.55; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes hb-collapse {
+  0%   { max-height: 64px; opacity: 1; transform: translateY(0); padding-top: 12px; padding-bottom: 12px; }
+  100% { max-height: 0;    opacity: 0; transform: translateY(-6px); padding-top: 0;  padding-bottom: 0; }
+}
+@keyframes sheet-in {
+  0%   { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.5; }
+}
+@keyframes scan-line {
+  0%   { top: 30%; }
+  50%  { top: 65%; }
+  100% { top: 30%; }
+}
+
+/* ── Global base ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+  background: #F6F3EC;
+  color: #333333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbars on overflow-x scrollers */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Collapse animation class */
+.animate-collapse {
+  animation: hb-collapse 0.48s 0.18s ease-in forwards;
+  overflow: hidden;
+}
+
+/* Sheet overlay */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 69, 0.45);
+  z-index: 40;
+  transition: opacity 200ms ease;
+}
+
+/* Reduce-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
