@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { Avatar } from '@/src/components/primitives/Avatar';
-import { MEMBER_IDS } from '@/src/lib/members';
-import type { Chore, MemberId } from '@/src/lib/types';
+import { useHousehold } from '@/src/context/HouseholdContext';
+import type { Chore } from '@/src/lib/types';
 
 const POINT_OPTIONS = [3, 5, 10, 15, 25];
 const RECURRENCE_OPTIONS = ['Does not repeat', 'Daily', 'Weekdays', 'Weekly', 'Monthly'];
@@ -14,36 +14,46 @@ interface ChoreSheetProps {
   onClose: () => void;
   initial?: Chore;
   onSave: (chore: Chore) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function ChoreSheet({ open, onClose, initial, onSave }: ChoreSheetProps) {
-  const [title, setTitle]       = useState(initial?.title ?? '');
-  const [memberId, setMemberId] = useState<MemberId>(initial?.memberId ?? 'maya');
-  const [due, setDue]           = useState(initial?.due ?? '2026-05-14');
-  const [points, setPoints]     = useState(initial?.points ?? 5);
+export function ChoreSheet({ open, onClose, initial, onSave, onDelete }: ChoreSheetProps) {
+  const { members } = useHousehold();
+
+  const [title,      setTitle]      = useState(initial?.title ?? '');
+  const [memberId,   setMemberId]   = useState<string>(initial?.memberId ?? members[0]?.id ?? '');
+  const [due,        setDue]        = useState(initial?.due ?? new Date().toISOString().split('T')[0]);
+  const [points,     setPoints]     = useState(initial?.points ?? 5);
   const [recurrence, setRecurrence] = useState(initial?.recurrence ?? null);
-  const [status, setStatus]     = useState<Chore['status']>(initial?.status ?? 'todo');
-  const [error, setError]       = useState('');
+  const [status,     setStatus]     = useState<Chore['status']>(initial?.status ?? 'todo');
+  const [error,      setError]      = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleSave = () => {
     if (!title.trim()) { setError('Title is required'); return; }
     setError('');
     onSave({
-      id: initial?.id ?? `chore-${Date.now()}`,
-      title: title.trim(),
+      id:          initial?.id ?? `chore-${Date.now()}`,
+      title:       title.trim(),
       memberId,
       status,
       due,
       points,
-      recurrence: recurrence === 'Does not repeat' ? null : recurrence,
+      recurrence:  recurrence === 'Does not repeat' ? null : recurrence,
       completedAt: initial?.completedAt,
     });
     onClose();
   };
 
-  const rowCls = 'flex items-center h-14 px-4 border-b border-hairline';
+  const handleDelete = () => {
+    if (!initial?.id || !onDelete) return;
+    onDelete(initial.id);
+    onClose();
+  };
+
+  const rowCls   = 'flex items-center h-14 px-4 border-b border-hairline';
   const labelCls = 'text-[13px] text-muted font-medium w-24 shrink-0';
-  const valCls = 'flex-1 text-[15px] text-ink font-medium bg-transparent border-none outline-none';
+  const valCls   = 'flex-1 text-[15px] text-ink font-medium bg-transparent border-none outline-none';
 
   return (
     <BottomSheet open={open} onClose={onClose} snapPercent={90}>
@@ -76,23 +86,25 @@ export function ChoreSheet({ open, onClose, initial, onSave }: ChoreSheetProps) 
           autoFocus
         />
 
-        {/* Member picker */}
-        <div className="mb-4">
-          <div className="text-label text-muted mb-2">Assigned to</div>
-          <div className="flex gap-2">
-            {MEMBER_IDS.map((id) => (
-              <button
-                key={id}
-                onClick={() => setMemberId(id)}
-                className={`rounded-full border-2 transition-all duration-[200ms] p-0 cursor-pointer ${
-                  memberId === id ? 'border-transparent' : 'border-transparent opacity-40'
-                }`}
-              >
-                <Avatar member={id} size={36} ring={memberId === id} />
-              </button>
-            ))}
+        {/* Assigned to */}
+        {members.length > 0 && (
+          <div className="mb-4">
+            <div className="text-label text-muted mb-2 text-[13px] font-medium" style={{ color: '#8A7E6B' }}>Assigned to</div>
+            <div className="flex gap-2 flex-wrap">
+              {members.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setMemberId(m.id)}
+                  className="flex flex-col items-center gap-1"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: memberId === m.id ? 1 : 0.4 }}
+                >
+                  <Avatar member={m.id} size={40} ring={memberId === m.id} />
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#334266', maxWidth: 48, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Form fields */}
         <div className="bg-surface border border-hairline rounded-card overflow-hidden mb-4">
@@ -121,7 +133,7 @@ export function ChoreSheet({ open, onClose, initial, onSave }: ChoreSheetProps) 
 
         {/* Points picker */}
         <div className="mb-4">
-          <div className="text-label text-muted mb-2">Points</div>
+          <div className="text-[13px] font-medium mb-2" style={{ color: '#8A7E6B' }}>Points</div>
           <div className="flex gap-2">
             {POINT_OPTIONS.map((p) => (
               <button
@@ -143,8 +155,8 @@ export function ChoreSheet({ open, onClose, initial, onSave }: ChoreSheetProps) 
 
         {/* Status picker (edit mode only) */}
         {initial?.id && (
-          <div>
-            <div className="text-label text-muted mb-2">Status</div>
+          <div className="mb-4">
+            <div className="text-[13px] font-medium mb-2" style={{ color: '#8A7E6B' }}>Status</div>
             <div className="flex gap-2">
               {(['todo', 'inProgress', 'done'] as Chore['status'][]).map((s) => (
                 <button
@@ -162,6 +174,38 @@ export function ChoreSheet({ open, onClose, initial, onSave }: ChoreSheetProps) 
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Delete (edit mode only) */}
+        {initial?.id && onDelete && (
+          <div className="mt-4">
+            {confirmDelete ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
+                  style={{ background: '#C65A3A', border: 'none', cursor: 'pointer' }}
+                >
+                  Yes, delete chore
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold"
+                  style={{ background: '#F0E5D2', color: '#334266', border: 'none', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full py-3 text-sm font-semibold"
+                style={{ color: '#C65A3A', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Delete chore
+              </button>
+            )}
           </div>
         )}
       </div>

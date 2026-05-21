@@ -15,6 +15,7 @@ export interface HouseholdMember {
   softColor: string;
   emoji: string;
   userId: string | null;
+  photoUrl: string | null;
 }
 
 interface HouseholdContextValue {
@@ -114,6 +115,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
         softColor:    m.soft_color,
         emoji:        m.emoji,
         userId:       m.user_id,
+        photoUrl:     m.photo_url ?? null,
       }))
     );
 

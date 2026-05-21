@@ -100,6 +100,25 @@ export function useChores() {
     if (!error && data) setChores((prev) => [mapRow(data), ...prev]);
   }, [householdId, user]);
 
+  const updateChore = useCallback(async (c: Chore) => {
+    setChores((prev) => prev.map((x) => x.id === c.id ? c : x));
+    const supabase = createClient();
+    await supabase.from('chores').update({
+      title:      c.title,
+      member_id:  c.memberId || null,
+      status:     c.status,
+      due_label:  c.due,
+      recurrence: c.recurrence,
+      points:     c.points,
+    }).eq('id', c.id);
+  }, []);
+
+  const deleteChore = useCallback(async (id: string) => {
+    setChores((prev) => prev.filter((c) => c.id !== id));
+    const supabase = createClient();
+    await supabase.from('chores').delete().eq('id', id);
+  }, []);
+
   const visibleChores =
     activeFilters.length === 0
       ? chores
@@ -110,7 +129,7 @@ export function useChores() {
     leaderboard,
     activeFilters, toggleFilter,
     clearFilters: () => setActiveFilters([]),
-    completeChore, moveChore, addChore,
+    completeChore, moveChore, addChore, updateChore, deleteChore,
     status,
   };
 }

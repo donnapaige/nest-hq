@@ -29,6 +29,8 @@ type WidgetId = typeof WIDGET_DEFS[number]['id'];
 const DEFAULT_WIDGETS: Record<WidgetId, boolean> = {
   shopping: true, fuel: true, bills: true, routines: true, savings: true, kids: true,
 };
+const DEFAULT_ORDER: WidgetId[] = WIDGET_DEFS.map((w) => w.id);
+const DEFAULT_SECTIONS = { summary: true, feed: true };
 
 function loadWidgetPrefs(): Record<WidgetId, boolean> {
   if (typeof window === 'undefined') return DEFAULT_WIDGETS;
@@ -37,9 +39,33 @@ function loadWidgetPrefs(): Record<WidgetId, boolean> {
     return stored ? { ...DEFAULT_WIDGETS, ...JSON.parse(stored) } : DEFAULT_WIDGETS;
   } catch { return DEFAULT_WIDGETS; }
 }
-
 function saveWidgetPrefs(prefs: Record<WidgetId, boolean>) {
   localStorage.setItem('nest-hq-widgets', JSON.stringify(prefs));
+}
+function loadWidgetOrder(): WidgetId[] {
+  if (typeof window === 'undefined') return DEFAULT_ORDER;
+  try {
+    const stored = localStorage.getItem('nest-hq-widget-order');
+    if (!stored) return DEFAULT_ORDER;
+    const arr = JSON.parse(stored) as WidgetId[];
+    const allIds = new Set(DEFAULT_ORDER);
+    const valid = arr.filter((id) => allIds.has(id));
+    const missing = DEFAULT_ORDER.filter((id) => !valid.includes(id));
+    return [...valid, ...missing];
+  } catch { return DEFAULT_ORDER; }
+}
+function saveWidgetOrder(order: WidgetId[]) {
+  localStorage.setItem('nest-hq-widget-order', JSON.stringify(order));
+}
+function loadSectionPrefs(): { summary: boolean; feed: boolean } {
+  if (typeof window === 'undefined') return DEFAULT_SECTIONS;
+  try {
+    const stored = localStorage.getItem('nest-hq-sections');
+    return stored ? { ...DEFAULT_SECTIONS, ...JSON.parse(stored) } : DEFAULT_SECTIONS;
+  } catch { return DEFAULT_SECTIONS; }
+}
+function saveSectionPrefs(prefs: { summary: boolean; feed: boolean }) {
+  localStorage.setItem('nest-hq-sections', JSON.stringify(prefs));
 }
 
 /* ── Widget data ──────────────────────────────────────────────── */
@@ -75,13 +101,19 @@ export function TodayScreen() {
   const { householdId, members, formatMoney } = useHousehold();
   const router = useRouter();
 
-  const [widgetPrefs, setWidgetPrefs] = useState<Record<WidgetId, boolean>>(DEFAULT_WIDGETS);
+  const [widgetPrefs,    setWidgetPrefs]    = useState<Record<WidgetId, boolean>>(DEFAULT_WIDGETS);
+  const [widgetOrder,    setWidgetOrder]    = useState<WidgetId[]>(DEFAULT_ORDER);
+  const [sectionPrefs,   setSectionPrefs]   = useState(DEFAULT_SECTIONS);
   const [editingWidgets, setEditingWidgets] = useState(false);
   const [widgetData, setWidgetData] = useState<WidgetData>({ shoppingCount: 0, fuelThisMonth: 0, billCount: 0, billTotal: 0, routineCount: 0, savingsTotal: 0, kidsCount: 0 });
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
 
-  useEffect(() => { setWidgetPrefs(loadWidgetPrefs()); }, []);
+  useEffect(() => {
+    setWidgetPrefs(loadWidgetPrefs());
+    setWidgetOrder(loadWidgetOrder());
+    setSectionPrefs(loadSectionPrefs());
+  }, []);
 
   const loadWidgets = useCallback(async () => {
     if (!householdId) return;
@@ -120,6 +152,27 @@ export function TodayScreen() {
     setWidgetPrefs((prev) => {
       const next = { ...prev, [id]: !prev[id] };
       saveWidgetPrefs(next);
+      return next;
+    });
+  };
+
+  const moveWidget = (id: WidgetId, dir: -1 | 1) => {
+    setWidgetOrder((prev) => {
+      const idx = prev.indexOf(id);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      const swap = idx + dir;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      saveWidgetOrder(next);
+      return next;
+    });
+  };
+
+  const toggleSection = (key: 'summary' | 'feed') => {
+    setSectionPrefs((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveSectionPrefs(next);
       return next;
     });
   };
@@ -193,39 +246,51 @@ export function TodayScreen() {
         )}
 
         {/* ── Quick Summary widgets ─────────────────────────────── */}
-        <div className="px-5 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>Quick Summary</p>
-            <button
-              onClick={() => setEditingWidgets(true)}
-              className="flex items-center gap-1"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#DBA03A', fontWeight: 700 }}
-            >
-              <Icon name="edit" size={12} color="#DBA03A" /> Edit
+        {sectionPrefs.summary && (
+          <div className="px-5 mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>Quick Summary</p>
+              <button
+                onClick={() => setEditingWidgets(true)}
+                className="flex items-center gap-1"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#DBA03A', fontWeight: 700 }}
+              >
+                <Icon name="edit" size={12} color="#DBA03A" /> Edit
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {widgetOrder.filter((id) => widgetPrefs[id]).map((id) => {
+                const w = WIDGET_DEFS.find((x) => x.id === id);
+                if (!w) return null;
+                const val = widgetValue[w.id];
+                return (
+                  <button
+                    key={w.id}
+                    onClick={() => router.push(val.href)}
+                    className="rounded-[16px] p-4 text-left"
+                    style={{ background: w.color, border: 'none', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: 24 }}>{w.emoji}</span>
+                    <p style={{ fontSize: 22, fontWeight: 900, color: w.textColor, marginTop: 8, lineHeight: 1 }}>{val.value}</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: w.textColor, opacity: 0.6, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 3 }}>{w.label}</p>
+                    <p style={{ fontSize: 11, color: w.textColor, opacity: 0.5, marginTop: 1 }}>{val.sub}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!sectionPrefs.summary && (
+          <div className="px-5 mt-4">
+            <button onClick={() => setEditingWidgets(true)} className="w-full py-2 rounded-xl text-sm font-semibold" style={{ background: '#F0E5D2', color: '#8A7E6B', border: 'none', cursor: 'pointer' }}>
+              + Show Quick Summary
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {WIDGET_DEFS.filter((w) => widgetPrefs[w.id]).map((w) => {
-              const val = widgetValue[w.id];
-              return (
-                <button
-                  key={w.id}
-                  onClick={() => router.push(val.href)}
-                  className="rounded-[16px] p-4 text-left"
-                  style={{ background: w.color, border: 'none', cursor: 'pointer' }}
-                >
-                  <span style={{ fontSize: 24 }}>{w.emoji}</span>
-                  <p style={{ fontSize: 22, fontWeight: 900, color: w.textColor, marginTop: 8, lineHeight: 1 }}>{val.value}</p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: w.textColor, opacity: 0.6, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 3 }}>{w.label}</p>
-                  <p style={{ fontSize: 11, color: w.textColor, opacity: 0.5, marginTop: 1 }}>{val.sub}</p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
         {/* ── Family activity feed ──────────────────────────────── */}
-        <div className="px-5 mt-6">
+        {sectionPrefs.feed && <div className="px-5 mt-6">
           <div className="flex items-center justify-between mb-3">
             <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>Family Activity</p>
             <button onClick={() => router.push('/feed')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#DBA03A', fontWeight: 700 }}>See all</button>
@@ -252,7 +317,15 @@ export function TodayScreen() {
               </button>
             </div>
           )}
-        </div>
+        </div>}
+
+        {!sectionPrefs.feed && (
+          <div className="px-5 mt-4">
+            <button onClick={() => setEditingWidgets(true)} className="w-full py-2 rounded-xl text-sm font-semibold" style={{ background: '#F0E5D2', color: '#8A7E6B', border: 'none', cursor: 'pointer' }}>
+              + Show Family Activity
+            </button>
+          </div>
+        )}
 
         {/* Refresh */}
         <div className="flex justify-center px-5 mt-4 mb-2">
@@ -265,30 +338,71 @@ export function TodayScreen() {
 
       <TabBar active="today" />
 
-      {/* Widget edit sheet */}
+      {/* Customize sheet */}
       {editingWidgets && (
         <div className="absolute inset-0 z-50" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setEditingWidgets(false)}>
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-[24px]" style={{ background: '#FBF8F1' }} onClick={(e) => e.stopPropagation()}>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-y-auto" style={{ background: '#FBF8F1', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-5 pt-5 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E8DFCB' }}>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#1E1E2E' }}>Customize widgets</h2>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#1E1E2E' }}>Customize Today</h2>
               <button onClick={() => setEditingWidgets(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#334266', fontWeight: 700 }}>Done</button>
             </div>
-            <div className="px-5 py-4 flex flex-col gap-1 pb-10">
-              {WIDGET_DEFS.map((w) => (
-                <div key={w.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #F0EAE0' }}>
+
+            {/* Sections */}
+            <div className="px-5 pt-4 pb-2">
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Sections</p>
+              {[
+                { key: 'summary' as const, label: 'Quick Summary', emoji: '📊' },
+                { key: 'feed'    as const, label: 'Family Activity', emoji: '📋' },
+              ].map((s) => (
+                <div key={s.key} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid #F0EAE0' }}>
                   <div className="flex items-center gap-3">
-                    <span style={{ fontSize: 22, width: 32, textAlign: 'center' }}>{w.emoji}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E' }}>{w.label}</span>
+                    <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>{s.emoji}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E' }}>{s.label}</span>
                   </div>
                   <button
-                    onClick={() => toggleWidget(w.id)}
+                    onClick={() => toggleSection(s.key)}
                     className="relative cursor-pointer border-none p-0 flex-shrink-0"
-                    style={{ width: 44, height: 24, borderRadius: 12, background: widgetPrefs[w.id] ? '#334266' : '#E8DFCB', transition: 'background 0.15s' }}
+                    style={{ width: 44, height: 24, borderRadius: 12, background: sectionPrefs[s.key] ? '#334266' : '#E8DFCB', transition: 'background 0.15s' }}
                   >
-                    <div className="absolute top-0.5 rounded-full bg-white" style={{ left: widgetPrefs[w.id] ? 22 : 2, width: 20, height: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.15)', transition: 'left 0.15s' }} />
+                    <div className="absolute top-0.5 rounded-full bg-white" style={{ left: sectionPrefs[s.key] ? 22 : 2, width: 20, height: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.15)', transition: 'left 0.15s' }} />
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Widgets */}
+            <div className="px-5 pt-3 pb-10">
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Quick Summary Widgets</p>
+              {widgetOrder.map((id, idx) => {
+                const w = WIDGET_DEFS.find((x) => x.id === id);
+                if (!w) return null;
+                return (
+                  <div key={w.id} className="flex items-center gap-2 py-2.5" style={{ borderBottom: '1px solid #F0EAE0' }}>
+                    {/* Reorder buttons */}
+                    <div className="flex flex-col gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={() => moveWidget(w.id, -1)}
+                        disabled={idx === 0}
+                        style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: '1px 4px', opacity: idx === 0 ? 0.2 : 0.7, fontSize: 12, lineHeight: 1 }}
+                      >▲</button>
+                      <button
+                        onClick={() => moveWidget(w.id, 1)}
+                        disabled={idx === widgetOrder.length - 1}
+                        style={{ background: 'none', border: 'none', cursor: idx === widgetOrder.length - 1 ? 'default' : 'pointer', padding: '1px 4px', opacity: idx === widgetOrder.length - 1 ? 0.2 : 0.7, fontSize: 12, lineHeight: 1 }}
+                      >▼</button>
+                    </div>
+                    <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{w.emoji}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E', flex: 1 }}>{w.label}</span>
+                    <button
+                      onClick={() => toggleWidget(w.id)}
+                      className="relative cursor-pointer border-none p-0 flex-shrink-0"
+                      style={{ width: 44, height: 24, borderRadius: 12, background: widgetPrefs[w.id] ? '#334266' : '#E8DFCB', transition: 'background 0.15s' }}
+                    >
+                      <div className="absolute top-0.5 rounded-full bg-white" style={{ left: widgetPrefs[w.id] ? 22 : 2, width: 20, height: 20, boxShadow: '0 1px 2px rgba(0,0,0,0.15)', transition: 'left 0.15s' }} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

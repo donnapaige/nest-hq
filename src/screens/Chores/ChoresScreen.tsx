@@ -19,7 +19,7 @@ export function ChoresScreen() {
   const {
     chores, leaderboard,
     activeFilters, toggleFilter, clearFilters,
-    completeChore, moveChore, addChore,
+    completeChore, moveChore, addChore, updateChore, deleteChore,
     status,
   } = useChores();
 
@@ -35,7 +35,7 @@ export function ChoresScreen() {
 
   const handleSave = (chore: Chore) => {
     if (editingChore) {
-      moveChore(chore.id, chore.status);
+      updateChore(chore);
     } else {
       addChore(chore);
     }
@@ -111,6 +111,7 @@ export function ChoresScreen() {
         onClose={() => setSheetOpen(false)}
         initial={editingChore}
         onSave={handleSave}
+        onDelete={deleteChore}
       />
     </div>
   );
