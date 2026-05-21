@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { useHousehold } from '@/src/context/HouseholdContext';
@@ -8,15 +8,35 @@ import { TabBar } from '@/src/components/primitives/TabBar';
 import { Icon } from '@/src/components/primitives/Icon';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { CURRENCIES } from '@/src/lib/currency';
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/src/lib/push';
 
 export function SettingsScreen() {
-  const { signOut } = useAuth();
-  const { householdName, inviteCode, currency, members, currentMember, updateCurrency, refetch } =
+  const { signOut, user } = useAuth();
+  const { householdName, householdId, inviteCode, currency, members, currentMember, updateCurrency, refetch } =
     useHousehold();
   const router = useRouter();
 
   const [copied, setCopied] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    isPushSubscribed().then(setPushEnabled);
+  }, []);
+
+  const handlePushToggle = async () => {
+    if (pushLoading) return;
+    setPushLoading(true);
+    if (pushEnabled) {
+      const ok = await unsubscribeFromPush();
+      if (ok) setPushEnabled(false);
+    } else {
+      const ok = await subscribeToPush(householdId!, user!.id);
+      if (ok) setPushEnabled(true);
+    }
+    setPushLoading(false);
+  };
 
   const handleSignOut = async () => { await signOut(); router.push('/login'); };
 
@@ -142,13 +162,36 @@ export function SettingsScreen() {
 
         {/* ── Notifications ─────────────────────────────────────── */}
         <Section label="Notifications">
+          <div className="px-5 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: '#F0E5D2' }}>
+                <span style={{ fontSize: 16 }}>🔔</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#333333', marginBottom: 2 }}>
+                  Push notifications
+                </p>
+                <p style={{ fontSize: 12, color: '#8A7E6B' }}>
+                  {pushEnabled ? 'Enabled on this device' : 'Bill reminders, chores & daily briefing'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handlePushToggle}
+              disabled={pushLoading}
+              className="relative flex-shrink-0"
+              style={{ width: 44, height: 26, background: 'transparent', border: 'none', cursor: pushLoading ? 'default' : 'pointer', padding: 0, opacity: pushLoading ? 0.6 : 1 }}
+            >
+              <div className="absolute inset-0 rounded-full" style={{ background: pushEnabled ? '#334266' : '#E8DFCB', transition: 'background 200ms' }} />
+              <div className="absolute top-[3px] rounded-full bg-white" style={{ width: 20, height: 20, left: pushEnabled ? 21 : 3, transition: 'left 200ms', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
+            </button>
+          </div>
+          <Divider />
           <ToggleRow label="Bill due alerts"     subtitle="3 days before a bill is due" defaultOn />
           <Divider />
           <ToggleRow label="Chore reminders"     subtitle="Nudge when a chore is overdue" defaultOn />
           <Divider />
           <ToggleRow label="Daily briefing"      subtitle="7am summary of today's schedule" defaultOn />
-          <Divider />
-          <ToggleRow label="Shopping updates"    subtitle="When a family member adds items" />
         </Section>
 
         {/* ── Privacy & About ───────────────────────────────────── */}
