@@ -108,6 +108,11 @@ export interface Bill {
   autoPay?: boolean;
   recurrence?: 'monthly' | 'weekly' | 'yearly' | null;
   category?: string;
+  // Variable billing fields
+  billType?: 'fixed' | 'variable';
+  arrivalDay?: number | null;      // day of month bill arrives (1–28)
+  amountConfirmed?: boolean;       // false = awaiting this cycle's amount
+  remindArrival?: boolean;         // show arrival reminder badge
 }
 
 export interface SavingsTx {

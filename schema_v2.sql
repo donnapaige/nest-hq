@@ -205,3 +205,9 @@ $$;
 --   on storage.objects for insert with check (bucket_id = 'bill-images' and auth.role() = 'authenticated');
 -- create policy "Anyone can view bill images"
 --   on storage.objects for select using (bucket_id = 'bill-images');
+
+-- ── Bill arrival & variable amount tracking (add to existing bills table) ──
+alter table public.bills add column if not exists bill_type       text    default 'fixed';    -- 'fixed' | 'variable'
+alter table public.bills add column if not exists arrival_day     integer;                    -- day of month bill typically arrives (1-28)
+alter table public.bills add column if not exists amount_confirmed boolean default true;      -- false = variable bill awaiting this cycle's amount
+alter table public.bills add column if not exists remind_arrival  boolean default false;      -- show arrival reminder badge

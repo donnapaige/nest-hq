@@ -7,15 +7,19 @@ import type { Bill } from '@/src/lib/types';
 
 function mapRow(r: Record<string, unknown>): Bill {
   return {
-    id:         r.id as string,
-    name:       r.name as string,
-    vendor:     (r.vendor as string) || '',
-    amount:     r.amount as number,
-    dueDate:    r.due_date as string,
-    paid:       r.paid as boolean,
-    autoPay:    r.auto_pay as boolean,
-    recurrence: r.recurrence as Bill['recurrence'],
-    category:   r.category as string | undefined,
+    id:              r.id as string,
+    name:            r.name as string,
+    vendor:          (r.vendor as string) || '',
+    amount:          r.amount as number,
+    dueDate:         r.due_date as string,
+    paid:            r.paid as boolean,
+    autoPay:         r.auto_pay as boolean,
+    recurrence:      r.recurrence as Bill['recurrence'],
+    category:        r.category as string | undefined,
+    billType:        (r.bill_type as Bill['billType']) ?? 'fixed',
+    arrivalDay:      r.arrival_day as number | null,
+    amountConfirmed: (r.amount_confirmed as boolean) ?? true,
+    remindArrival:   (r.remind_arrival as boolean) ?? false,
   };
 }
 
@@ -46,32 +50,50 @@ export function useBills() {
     const newPaid = !bill.paid;
     setBills((prev) => prev.map((b) => b.id === id ? { ...b, paid: newPaid } : b));
     const supabase = createClient();
-    await supabase.from('bills').update({ paid: newPaid }).eq('id', id);
+    const updates: Record<string, unknown> = { paid: newPaid };
+    // When a recurring variable bill is marked paid, reset for the next cycle
+    if (newPaid && bill.billType === 'variable' && bill.recurrence) {
+      updates.amount_confirmed = false;
+      updates.amount = 0;
+      setBills((prev) => prev.map((b) => b.id === id ? { ...b, amountConfirmed: false, amount: 0 } : b));
+    }
+    await supabase.from('bills').update(updates).eq('id', id);
   }, [bills]);
+
+  const updateAmount = useCallback(async (id: string, amount: number) => {
+    setBills((prev) => prev.map((b) => b.id === id ? { ...b, amount, amountConfirmed: true } : b));
+    const supabase = createClient();
+    await supabase.from('bills').update({ amount, amount_confirmed: true }).eq('id', id);
+  }, []);
 
   const addBill = useCallback(async (bill: Omit<Bill, 'id'> & { imageUrl?: string; paymentMethod?: string; reminderDaysBefore?: number }) => {
     if (!householdId) return;
     const supabase = createClient();
+    const isVariable = bill.billType === 'variable';
     const { data, error } = await supabase
       .from('bills')
       .insert({
-        household_id:        householdId,
-        name:                bill.name,
-        vendor:              bill.vendor,
-        amount:              bill.amount,
-        due_date:            bill.dueDate,
-        paid:                bill.paid,
-        auto_pay:            bill.autoPay,
-        recurrence:          bill.recurrence,
-        category:            bill.category,
-        image_url:           bill.imageUrl,
-        payment_method:      bill.paymentMethod,
-        reminder_days_before:bill.reminderDaysBefore,
+        household_id:         householdId,
+        name:                 bill.name,
+        vendor:               bill.vendor,
+        amount:               bill.amount,
+        due_date:             bill.dueDate,
+        paid:                 bill.paid,
+        auto_pay:             bill.autoPay,
+        recurrence:           bill.recurrence,
+        category:             bill.category,
+        image_url:            bill.imageUrl,
+        payment_method:       bill.paymentMethod,
+        reminder_days_before: bill.reminderDaysBefore,
+        bill_type:            bill.billType ?? 'fixed',
+        arrival_day:          bill.arrivalDay ?? null,
+        amount_confirmed:     isVariable ? false : true,
+        remind_arrival:       bill.remindArrival ?? false,
       })
       .select()
       .single();
     if (!error && data) setBills((prev) => [...prev, mapRow(data)]);
   }, [householdId]);
 
-  return { bills, status, togglePaid, addBill };
+  return { bills, status, togglePaid, addBill, updateAmount };
 }
