@@ -49,21 +49,24 @@ export function useBills() {
     await supabase.from('bills').update({ paid: newPaid }).eq('id', id);
   }, [bills]);
 
-  const addBill = useCallback(async (bill: Bill) => {
+  const addBill = useCallback(async (bill: Omit<Bill, 'id'> & { imageUrl?: string; paymentMethod?: string; reminderDaysBefore?: number }) => {
     if (!householdId) return;
     const supabase = createClient();
     const { data, error } = await supabase
       .from('bills')
       .insert({
-        household_id: householdId,
-        name:         bill.name,
-        vendor:       bill.vendor,
-        amount:       bill.amount,
-        due_date:     bill.dueDate,
-        paid:         bill.paid,
-        auto_pay:     bill.autoPay,
-        recurrence:   bill.recurrence,
-        category:     bill.category,
+        household_id:        householdId,
+        name:                bill.name,
+        vendor:              bill.vendor,
+        amount:              bill.amount,
+        due_date:            bill.dueDate,
+        paid:                bill.paid,
+        auto_pay:            bill.autoPay,
+        recurrence:          bill.recurrence,
+        category:            bill.category,
+        image_url:           bill.imageUrl,
+        payment_method:      bill.paymentMethod,
+        reminder_days_before:bill.reminderDaysBefore,
       })
       .select()
       .single();

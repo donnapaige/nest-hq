@@ -4,11 +4,13 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/src/lib/supabase/client';
 import { useAuth } from './AuthContext';
+import { formatCurrency as fmt } from '@/src/lib/currency';
 
 export interface HouseholdMember {
   id: string;
   name: string;
   role: string;
+  access_level: string; // 'adult' | 'child' | 'caregiver'
   color: string;
   softColor: string;
   emoji: string;
@@ -19,22 +21,28 @@ interface HouseholdContextValue {
   householdId: string | null;
   householdName: string;
   inviteCode: string;
+  currency: string;
   members: HouseholdMember[];
   currentMember: HouseholdMember | null;
   getMemberById: (id: string) => HouseholdMember | undefined;
+  formatMoney: (amount: number) => string;
   loading: boolean;
   refetch: () => Promise<void>;
+  updateCurrency: (code: string) => Promise<void>;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue>({
   householdId: null,
   householdName: '',
   inviteCode: '',
+  currency: 'PHP',
   members: [],
   currentMember: null,
   getMemberById: () => undefined,
+  formatMoney: (n) => `₱${n}`,
   loading: true,
   refetch: async () => {},
+  updateCurrency: async () => {},
 });
 
 const PUBLIC_PATHS = ['/login', '/signup', '/setup'];
@@ -44,11 +52,12 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [householdId,   setHouseholdId]   = useState<string | null>(null);
   const [householdName, setHouseholdName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
-  const [members, setMembers] = useState<HouseholdMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [inviteCode,    setInviteCode]    = useState('');
+  const [currency,      setCurrency]      = useState('PHP');
+  const [members,       setMembers]       = useState<HouseholdMember[]>([]);
+  const [loading,       setLoading]       = useState(true);
 
   const fetchHousehold = useCallback(async () => {
     if (!user) {
@@ -74,7 +83,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
 
     const { data: household } = await supabase
       .from('households')
-      .select('id, name, invite_code')
+      .select('id, name, invite_code, currency')
       .eq('id', memberRow.household_id)
       .single();
 
@@ -87,6 +96,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     setHouseholdId(household.id);
     setHouseholdName(household.name);
     setInviteCode(household.invite_code);
+    setCurrency(household.currency ?? 'PHP');
 
     const { data: membersData } = await supabase
       .from('household_members')
@@ -96,13 +106,14 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
 
     setMembers(
       (membersData || []).map((m) => ({
-        id: m.id,
-        name: m.name,
-        role: m.role,
-        color: m.color,
-        softColor: m.soft_color,
-        emoji: m.emoji,
-        userId: m.user_id,
+        id:           m.id,
+        name:         m.name,
+        role:         m.role,
+        access_level: m.access_level ?? 'adult',
+        color:        m.color,
+        softColor:    m.soft_color,
+        emoji:        m.emoji,
+        userId:       m.user_id,
       }))
     );
 
@@ -131,17 +142,31 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     [members]
   );
 
+  const formatMoney = useCallback(
+    (amount: number) => fmt(amount, currency),
+    [currency]
+  );
+
+  const updateCurrency = useCallback(async (code: string) => {
+    setCurrency(code);
+    const supabase = createClient();
+    await supabase.rpc('update_household_currency', { p_currency: code });
+  }, []);
+
   return (
     <HouseholdContext.Provider
       value={{
         householdId,
         householdName,
         inviteCode,
+        currency,
         members,
         currentMember,
         getMemberById,
+        formatMoney,
         loading,
         refetch: fetchHousehold,
+        updateCurrency,
       }}
     >
       {children}

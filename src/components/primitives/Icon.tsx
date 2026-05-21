@@ -3,7 +3,9 @@ import type { ReactElement } from 'react';
 type IconName =
   | 'home' | 'calendar' | 'check' | 'cart' | 'coin' | 'user' | 'plus'
   | 'chevron' | 'bell' | 'qr' | 'link' | 'sun' | 'sparkle' | 'flag'
-  | 'filter' | 'search' | 'dot' | 'sync' | 'settings';
+  | 'filter' | 'search' | 'dot' | 'sync' | 'settings'
+  | 'users' | 'fuel' | 'image' | 'activity' | 'lock' | 'trash'
+  | 'copy' | 'edit' | 'camera' | 'card' | 'repeat' | 'child';
 
 interface IconProps {
   name: IconName;
@@ -33,6 +35,18 @@ const PATHS: Record<IconName, ReactElement> = {
   dot:      <><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></>,
   sync:     <><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></>,
   settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></>,
+  users:    <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+  fuel:     <><path d="M3 22V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M3 10h12M15 6h2a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h0a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-4"/><path d="M7 14h2M7 18h2"/></>,
+  image:    <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></>,
+  activity: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+  lock:     <><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+  trash:    <><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
+  copy:     <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+  edit:     <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></>,
+  camera:   <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></>,
+  card:     <><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></>,
+  repeat:   <><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>,
+  child:    <><circle cx="12" cy="7" r="4"/><path d="M5.5 21a1.5 1.5 0 0 1-1.5-1.5V17a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2.5a1.5 1.5 0 0 1-1.5 1.5"/><path d="M10 17l2 2 2-2"/></>,
 };
 
 export function Icon({ name, size = 20, color = 'currentColor', stroke = 1.8, className = '' }: IconProps) {

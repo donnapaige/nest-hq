@@ -1,6 +1,6 @@
 'use client';
 
-export type BillsTab = 'bills' | 'savings';
+export type BillsTab = 'bills' | 'savings' | 'fuel';
 
 interface TabSwitcherProps {
   active: BillsTab;
@@ -8,8 +8,9 @@ interface TabSwitcherProps {
 }
 
 const TABS: Array<{ id: BillsTab; label: string }> = [
-  { id: 'bills',   label: 'Bills' },
+  { id: 'bills',   label: 'Bills'   },
   { id: 'savings', label: 'Savings' },
+  { id: 'fuel',    label: '⛽ Fuel'  },
 ];
 
 export function TabSwitcher({ active, onChange }: TabSwitcherProps) {
