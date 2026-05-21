@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/src/context/AuthContext';
+import { useHousehold } from '@/src/context/HouseholdContext';
 import { TabBar } from '@/src/components/primitives/TabBar';
 import { Icon } from '@/src/components/primitives/Icon';
 
@@ -17,10 +18,10 @@ function getInitials(name: string) {
 
 export function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const { householdName } = useHousehold();
   const router = useRouter();
 
   const fullName: string = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'You';
-  const householdName: string = user?.user_metadata?.household_name ?? 'My Household';
   const email: string = user?.email ?? '';
   const initials = getInitials(fullName);
 
@@ -65,24 +66,26 @@ export function ProfileScreen() {
 
         {/* Household card */}
         <div className="px-5 mb-6">
-          <div
-            className="rounded-[16px] p-5 flex items-center gap-4"
-            style={{ background: '#FBF8F1', border: '1px solid #E8DFCB', boxShadow: '0 2px 8px rgba(51,66,102,0.06)' }}
-          >
+          <Link href="/settings" style={{ textDecoration: 'none' }}>
             <div
-              className="w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0"
-              style={{ background: '#DCE0EB' }}
+              className="rounded-[16px] p-5 flex items-center gap-4"
+              style={{ background: '#FBF8F1', border: '1px solid #E8DFCB', boxShadow: '0 2px 8px rgba(51,66,102,0.06)', cursor: 'pointer' }}
             >
-              <Icon name="home" size={22} color="#334266" />
+              <div
+                className="w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0"
+                style={{ background: '#DCE0EB' }}
+              >
+                <Icon name="home" size={22} color="#334266" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#8A7E6B', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>
+                  Household
+                </p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#333333' }}>{householdName}</p>
+              </div>
+              <Icon name="chevron" size={16} color="#8A7E6B" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#8A7E6B', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>
-                Household
-              </p>
-              <p style={{ fontSize: 17, fontWeight: 700, color: '#333333' }}>{householdName}</p>
-            </div>
-            <Icon name="chevron" size={16} color="#8A7E6B" />
-          </div>
+          </Link>
         </div>
 
         {/* Info rows */}
