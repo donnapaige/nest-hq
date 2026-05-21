@@ -2,18 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function initWebPush() {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+}
 
 async function pushToHousehold(householdId: string, payload: object) {
+  const supabase = getSupabase();
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')
@@ -34,6 +39,9 @@ export async function GET(req: NextRequest) {
   if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  initWebPush();
+  const supabase = getSupabase();
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
