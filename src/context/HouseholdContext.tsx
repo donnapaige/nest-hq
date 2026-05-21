@@ -105,6 +105,21 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
       .eq('household_id', household.id)
       .order('created_at');
 
+    // Sign photo URLs for members that have a stored path (private bucket)
+    const withPhotos = (membersData || []).filter((m) => m.photo_url);
+    const signedMap: Record<string, string> = {};
+    if (withPhotos.length > 0) {
+      const results = await Promise.all(
+        withPhotos.map((m) =>
+          supabase.storage.from('member-photos').createSignedUrl(m.photo_url, 3600)
+            .then(({ data }) => ({ id: m.id, url: data?.signedUrl ?? null }))
+        )
+      );
+      for (const r of results) {
+        if (r.url) signedMap[r.id] = r.url;
+      }
+    }
+
     setMembers(
       (membersData || []).map((m) => ({
         id:           m.id,
@@ -115,7 +130,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
         softColor:    m.soft_color,
         emoji:        m.emoji,
         userId:       m.user_id,
-        photoUrl:     m.photo_url ?? null,
+        photoUrl:     signedMap[m.id] ?? null,
       }))
     );
 

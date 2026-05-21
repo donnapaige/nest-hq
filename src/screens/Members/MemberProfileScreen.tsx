@@ -117,11 +117,9 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
     const path = `${memberId}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const { error: upErr } = await supabase.storage.from('member-photos').upload(path, file, { upsert: true });
     if (upErr) { setUploading(false); return; }
-    const { data: pub } = supabase.storage.from('member-photos').getPublicUrl(path);
-    if (pub?.publicUrl) {
-      await supabase.from('household_members').update({ photo_url: pub.publicUrl }).eq('id', memberId);
-      await refetch();
-    }
+    // Store the storage path (not a URL) — signed URL is generated in HouseholdContext on load
+    await supabase.from('household_members').update({ photo_url: path }).eq('id', memberId);
+    await refetch();
     setUploading(false);
   };
 
