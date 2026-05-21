@@ -47,7 +47,7 @@ export function SettingsScreen() {
         {/* Header */}
         <div className="px-5 pt-14 pb-5 flex items-center gap-3" style={{ borderBottom: '1px solid #E8DFCB' }}>
           <button onClick={() => router.back()} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer' }}>
-            <Icon name="chevron" size={18} color="#334266" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334266" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#334266' }}>Settings</h1>
         </div>
@@ -61,11 +61,16 @@ export function SettingsScreen() {
             className="w-full px-5 py-4 flex items-center justify-between"
             style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
-            <div className="text-left">
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#333333', marginBottom: 2 }}>Currency</p>
-              <p style={{ fontSize: 12, color: '#8A7E6B' }}>
-                {CURRENCIES.find((c) => c.code === currency)?.name ?? currency}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: '#F0E5D2' }}>
+                <span style={{ fontSize: 16 }}>💱</span>
+              </div>
+              <div className="text-left">
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#333333' }}>Currency</p>
+                <p style={{ fontSize: 12, color: '#8A7E6B' }}>
+                  {CURRENCIES.find((c) => c.code === currency)?.name ?? currency}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <span style={{ fontSize: 15, fontWeight: 700, color: '#4C8A8B' }}>{currency}</span>
