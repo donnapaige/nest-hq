@@ -20,6 +20,7 @@ function mapRow(r: Record<string, unknown>): Bill {
     arrivalDay:      r.arrival_day as number | null,
     amountConfirmed: (r.amount_confirmed as boolean) ?? true,
     remindArrival:   (r.remind_arrival as boolean) ?? false,
+    forMemberId:     (r.for_member_id as string) || null,
   };
 }
 
@@ -86,6 +87,7 @@ export function useBills() {
         arrival_day:          bill.arrivalDay ?? null,
         amount_confirmed:     isVariable ? (bill.amountConfirmed ?? false) : true,
         remind_arrival:       bill.remindArrival ?? false,
+        for_member_id:        bill.forMemberId ?? null,
       })
       .eq('id', id)
       .select()
@@ -116,6 +118,7 @@ export function useBills() {
         arrival_day:          bill.arrivalDay ?? null,
         amount_confirmed:     isVariable ? false : true,
         remind_arrival:       bill.remindArrival ?? false,
+        for_member_id:        bill.forMemberId ?? null,
       })
       .select()
       .single();

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
+import { ForMemberPicker } from '@/src/components/primitives/ForMemberPicker';
 import { createClient } from '@/src/lib/supabase/client';
 import type { Bill } from '@/src/lib/types';
 
@@ -41,6 +42,7 @@ export function EditBillSheet({ open, bill, onClose, onSave }: EditBillSheetProp
   const [previewUrl,     setPreviewUrl]    = useState('');
   const [uploading,      setUploading]     = useState(false);
   const [error,          setError]         = useState('');
+  const [forMemberId,    setForMemberId]   = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Populate form when bill changes
@@ -55,6 +57,7 @@ export function EditBillSheet({ open, bill, onClose, onSave }: EditBillSheetProp
     setBillType(bill.billType ?? 'fixed');
     setArrivalDay(bill.arrivalDay ? String(bill.arrivalDay) : '5');
     setRemindArrival(bill.remindArrival ?? true);
+    setForMemberId(bill.forMemberId ?? null);
     setImageUrl('');
     setPreviewUrl('');
     setError('');
@@ -94,6 +97,7 @@ export function EditBillSheet({ open, bill, onClose, onSave }: EditBillSheetProp
       arrivalDay:         billType === 'variable' ? Number(arrivalDay) : null,
       remindArrival:      billType === 'variable' ? remindArrival : false,
       amountConfirmed:    billType === 'fixed' ? true : (bill.amountConfirmed ?? false),
+      forMemberId:        forMemberId || null,
     });
     onClose();
   };
@@ -178,6 +182,9 @@ export function EditBillSheet({ open, bill, onClose, onSave }: EditBillSheetProp
             ))}
           </div>
         </div>
+
+        {/* For (optional) */}
+        <ForMemberPicker value={forMemberId} onChange={setForMemberId} />
 
         {/* Core fields */}
         <div className="bg-surface border border-hairline rounded-card overflow-hidden mb-4">

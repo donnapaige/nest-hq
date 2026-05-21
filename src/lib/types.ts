@@ -57,6 +57,7 @@ export interface CalendarEvent {
   end: string;
   allDay?: boolean;
   memberIds: MemberId[];
+  forMemberId?: string | null;
   location?: string;
   notes?: string;
   recurrence?: RRule | null;
@@ -75,6 +76,7 @@ export interface Chore {
   id: string;
   title: string;
   memberId: MemberId;
+  forMemberId?: string | null;
   status: 'todo' | 'inProgress' | 'done';
   due: string;
   recurrence?: string | null;
@@ -100,6 +102,7 @@ export interface ShoppingItem {
 /* ── Bills ── */
 export interface Bill {
   id: string;
+  forMemberId?: string | null;
   name: string;
   vendor: string;
   amount: number;

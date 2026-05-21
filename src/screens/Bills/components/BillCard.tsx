@@ -1,5 +1,7 @@
 'use client';
 
+'use client';
+
 import { useState } from 'react';
 import { DueCountdownChip, daysUntilDue } from './DueCountdownChip';
 import { useHousehold } from '@/src/context/HouseholdContext';
@@ -27,7 +29,8 @@ function isArrivalDue(arrivalDay: number | null | undefined): boolean {
 }
 
 export function BillCard({ bill, onTogglePaid, onUpdateAmount, onEdit }: BillCardProps) {
-  const { formatMoney } = useHousehold();
+  const { formatMoney, getMemberById } = useHousehold();
+  const forM = bill.forMemberId ? getMemberById(bill.forMemberId) : undefined;
   const { month, day } = formatDueDate(bill.dueDate);
   const days    = daysUntilDue(bill.dueDate);
   const isUrgent = !bill.paid && days <= 3;
@@ -140,7 +143,12 @@ export function BillCard({ bill, onTogglePaid, onUpdateAmount, onEdit }: BillCar
               <span className="text-[11px] font-bold rounded-pill" style={{ color: '#334266', background: '#33426618', padding: '2px 8px' }}>Auto</span>
             )}
           </div>
-          <div className="text-[12px] text-muted mt-0.5">{bill.vendor}</div>
+          <div className="text-[12px] text-muted mt-0.5">
+            {bill.vendor}
+            {forM && (
+              <span className="ml-1.5 font-semibold" style={{ color: forM.color }}>· For: {forM.name}</span>
+            )}
+          </div>
         </div>
 
         {/* Amount + paid toggle */}

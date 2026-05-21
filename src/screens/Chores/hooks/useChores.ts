@@ -8,14 +8,15 @@ import type { Chore, MemberId } from '@/src/lib/types';
 
 function mapRow(r: Record<string, unknown>): Chore {
   return {
-    id:          r.id as string,
-    title:       r.title as string,
-    memberId:    (r.member_id as string) || '',
-    status:      r.status as Chore['status'],
-    due:         (r.due_label as string) || 'No due date',
-    recurrence:  r.recurrence as string | null,
-    points:      r.points as number,
-    completedAt: r.completed_at as string | undefined,
+    id:           r.id as string,
+    title:        r.title as string,
+    memberId:     (r.member_id as string) || '',
+    forMemberId:  (r.for_member_id as string) || null,
+    status:       r.status as Chore['status'],
+    due:          (r.due_label as string) || 'No due date',
+    recurrence:   r.recurrence as string | null,
+    points:       r.points as number,
+    completedAt:  r.completed_at as string | undefined,
   };
 }
 
@@ -86,14 +87,15 @@ export function useChores() {
     const { data, error } = await supabase
       .from('chores')
       .insert({
-        household_id: householdId,
-        title:        c.title,
-        member_id:    c.memberId || null,
-        status:       c.status,
-        due_label:    c.due,
-        recurrence:   c.recurrence,
-        points:       c.points,
-        created_by:   user?.id,
+        household_id:  householdId,
+        title:         c.title,
+        member_id:     c.memberId || null,
+        for_member_id: c.forMemberId || null,
+        status:        c.status,
+        due_label:     c.due,
+        recurrence:    c.recurrence,
+        points:        c.points,
+        created_by:    user?.id,
       })
       .select()
       .single();
@@ -104,12 +106,13 @@ export function useChores() {
     setChores((prev) => prev.map((x) => x.id === c.id ? c : x));
     const supabase = createClient();
     await supabase.from('chores').update({
-      title:      c.title,
-      member_id:  c.memberId || null,
-      status:     c.status,
-      due_label:  c.due,
-      recurrence: c.recurrence,
-      points:     c.points,
+      title:         c.title,
+      member_id:     c.memberId || null,
+      for_member_id: c.forMemberId || null,
+      status:        c.status,
+      due_label:     c.due,
+      recurrence:    c.recurrence,
+      points:        c.points,
     }).eq('id', c.id);
   }, []);
 

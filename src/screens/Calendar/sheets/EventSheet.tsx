@@ -5,6 +5,7 @@ import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { RecurrenceModal } from './RecurrenceModal';
 import { useHousehold } from '@/src/context/HouseholdContext';
+import { ForMemberPicker } from '@/src/components/primitives/ForMemberPicker';
 import type { CalendarEvent, RRule } from '@/src/lib/types';
 
 interface EventSheetProps {
@@ -20,6 +21,7 @@ export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSh
 
   const [title,          setTitle]          = useState(initial?.title ?? '');
   const [selectedIds,    setSelectedIds]    = useState<string[]>(initial?.memberIds ?? []);
+  const [forMemberId,    setForMemberId]    = useState<string | null>(initial?.forMemberId ?? null);
   const [date,           setDate]           = useState(initial?.start?.split('T')[0] ?? new Date().toISOString().split('T')[0]);
   const [startTime,      setStartTime]      = useState(initial?.start?.split('T')[1]?.slice(0, 5) ?? '09:00');
   const [endTime,        setEndTime]        = useState(initial?.end?.split('T')[1]?.slice(0, 5) ?? '10:00');
@@ -34,6 +36,7 @@ export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSh
   useEffect(() => {
     setTitle(initial?.title ?? '');
     setSelectedIds(initial?.memberIds ?? []);
+    setForMemberId(initial?.forMemberId ?? null);
     setDate(initial?.start?.split('T')[0] ?? new Date().toISOString().split('T')[0]);
     setStartTime(initial?.start?.split('T')[1]?.slice(0, 5) ?? '09:00');
     setEndTime(initial?.end?.split('T')[1]?.slice(0, 5) ?? '10:00');
@@ -51,13 +54,14 @@ export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSh
     if (!title.trim()) { setError('Title is required'); return; }
     setError('');
     onSave({
-      id:        initial?.id ?? `ev-${Date.now()}`,
-      title:     title.trim(),
-      start:     `${date}T${startTime}`,
-      end:       `${date}T${endTime}`,
-      memberIds: selectedIds,
-      location:  location || undefined,
-      notes:     notes || undefined,
+      id:          initial?.id ?? `ev-${Date.now()}`,
+      title:       title.trim(),
+      start:       `${date}T${startTime}`,
+      end:         `${date}T${endTime}`,
+      memberIds:   selectedIds,
+      forMemberId: forMemberId || null,
+      location:    location || undefined,
+      notes:       notes || undefined,
       recurrence,
     });
     onClose();
@@ -120,6 +124,9 @@ export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSh
               </div>
             </div>
           )}
+
+          {/* For (optional) */}
+          <ForMemberPicker value={forMemberId} onChange={setForMemberId} />
 
           {/* Form fields */}
           <div className="bg-surface-alt border border-hairline rounded-card overflow-hidden mb-4">

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
+import { ForMemberPicker } from '@/src/components/primitives/ForMemberPicker';
 import { createClient } from '@/src/lib/supabase/client';
 import type { Bill } from '@/src/lib/types';
 
@@ -42,6 +43,7 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
   const [previewUrl,     setPreviewUrl]    = useState('');
   const [uploading,      setUploading]     = useState(false);
   const [error,          setError]         = useState('');
+  const [forMemberId,    setForMemberId]   = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,12 +79,13 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
       arrivalDay:         billType === 'variable' ? Number(arrivalDay) : null,
       remindArrival:      billType === 'variable' ? remindArrival : false,
       amountConfirmed:    billType === 'fixed',
+      forMemberId:        forMemberId || null,
     });
     // Reset
     setName(''); setVendor(''); setAmount(''); setRecurrence('monthly');
     setAutoPay(false); setPaymentMethod('manual'); setReminderDays('3');
     setBillType('fixed'); setArrivalDay('5'); setRemindArrival(true);
-    setImageUrl(''); setPreviewUrl(''); setError('');
+    setImageUrl(''); setPreviewUrl(''); setError(''); setForMemberId(null);
     onClose();
   };
 
@@ -170,6 +173,9 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
             ))}
           </div>
         </div>
+
+        {/* For (optional) */}
+        <ForMemberPicker value={forMemberId} onChange={setForMemberId} />
 
         {/* Core fields */}
         <div className="bg-surface border border-hairline rounded-card overflow-hidden mb-4">

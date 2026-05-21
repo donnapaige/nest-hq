@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { Icon } from '@/src/components/primitives/Icon';
-import { getMember } from '@/src/lib/members';
+import { useHousehold } from '@/src/context/HouseholdContext';
 import { useConfetti } from '@/src/components/ConfettiOverlay';
 import type { Chore } from '@/src/lib/types';
 
@@ -14,9 +14,14 @@ interface ChoreCardProps {
 }
 
 export function ChoreCard({ chore, onComplete, onEdit }: ChoreCardProps) {
-  const m = getMember(chore.memberId);
+  const { getMemberById } = useHousehold();
+  const m    = getMemberById(chore.memberId);
+  const forM = chore.forMemberId ? getMemberById(chore.forMemberId) : undefined;
   const fire = useConfetti();
   const isDone = chore.status === 'done';
+
+  const color     = m?.color     ?? '#9BA3AF';
+  const softColor = m?.softColor ?? '#F3F4F6';
 
   /* Swipe state */
   const [translateX, setTranslateX] = useState(0);
@@ -85,7 +90,7 @@ export function ChoreCard({ chore, onComplete, onEdit }: ChoreCardProps) {
         {/* Member accent bar */}
         <div
           className="absolute left-0 top-0 bottom-0 w-1 rounded-l-card"
-          style={{ background: m.color, opacity: 0.6 }}
+          style={{ background: color, opacity: 0.6 }}
         />
 
         {/* Checkbox */}
@@ -93,8 +98,8 @@ export function ChoreCard({ chore, onComplete, onEdit }: ChoreCardProps) {
           onClick={(e) => { e.stopPropagation(); handleCheckbox(); }}
           className="relative w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 cursor-pointer transition-all duration-[200ms]"
           style={{
-            background: isDone ? m.color : '#F6F3EC',
-            borderColor: isDone ? m.color : '#E8DFCB',
+            background: isDone ? color : '#F6F3EC',
+            borderColor: isDone ? color : '#E8DFCB',
           }}
           aria-label={isDone ? 'Completed' : 'Mark complete'}
         >
@@ -109,12 +114,20 @@ export function ChoreCard({ chore, onComplete, onEdit }: ChoreCardProps) {
           >
             {chore.title}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-[11px] text-muted font-medium">{chore.due}</span>
             {chore.recurrence && (
               <>
                 <span className="w-0.5 h-0.5 rounded-full bg-muted" />
                 <span className="text-[11px] text-muted font-medium">{chore.recurrence}</span>
+              </>
+            )}
+            {forM && (
+              <>
+                <span className="w-0.5 h-0.5 rounded-full bg-muted" />
+                <span className="text-[11px] font-medium" style={{ color: forM.color }}>
+                  For: {forM.name}
+                </span>
               </>
             )}
           </div>
@@ -124,8 +137,8 @@ export function ChoreCard({ chore, onComplete, onEdit }: ChoreCardProps) {
         <span
           className="text-[11px] font-bold rounded-pill shrink-0"
           style={{
-            color: m.color,
-            background: m.color + '14',
+            color: color,
+            background: softColor,
             padding: '3px 8px',
           }}
         >

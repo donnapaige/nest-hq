@@ -10,15 +10,16 @@ export type CalendarView = 'week' | 'month';
 
 function mapRow(r: Record<string, unknown>): CalendarEvent {
   return {
-    id:         r.id as string,
-    title:      r.title as string,
-    start:      r.start_time as string,
-    end:        (r.end_time as string) || (r.start_time as string),
-    allDay:     r.all_day as boolean,
-    memberIds:  (r.member_ids as string[]) || [],
-    location:   r.location as string | undefined,
-    notes:      r.notes as string | undefined,
-    recurrence: r.recurrence as CalendarEvent['recurrence'],
+    id:           r.id as string,
+    title:        r.title as string,
+    start:        r.start_time as string,
+    end:          (r.end_time as string) || (r.start_time as string),
+    allDay:       r.all_day as boolean,
+    memberIds:    (r.member_ids as string[]) || [],
+    forMemberId:  (r.for_member_id as string) || null,
+    location:     r.location as string | undefined,
+    notes:        r.notes as string | undefined,
+    recurrence:   r.recurrence as CalendarEvent['recurrence'],
   };
 }
 
@@ -67,16 +68,17 @@ export function useCalendar() {
     const { data, error } = await supabase
       .from('events')
       .insert({
-        household_id: householdId,
-        title:        ev.title,
-        start_time:   ev.start,
-        end_time:     ev.end,
-        all_day:      ev.allDay ?? false,
-        member_ids:   ev.memberIds ?? [],
-        location:     ev.location,
-        notes:        ev.notes,
-        recurrence:   ev.recurrence,
-        created_by:   user?.id,
+        household_id:  householdId,
+        title:         ev.title,
+        start_time:    ev.start,
+        end_time:      ev.end,
+        all_day:       ev.allDay ?? false,
+        member_ids:    ev.memberIds ?? [],
+        for_member_id: ev.forMemberId ?? null,
+        location:      ev.location,
+        notes:         ev.notes,
+        recurrence:    ev.recurrence,
+        created_by:    user?.id,
       })
       .select()
       .single();
@@ -89,14 +91,15 @@ export function useCalendar() {
     const { error } = await supabase
       .from('events')
       .update({
-        title:      ev.title,
-        start_time: ev.start,
-        end_time:   ev.end,
-        all_day:    ev.allDay ?? false,
-        member_ids: ev.memberIds ?? [],
-        location:   ev.location,
-        notes:      ev.notes,
-        recurrence: ev.recurrence,
+        title:         ev.title,
+        start_time:    ev.start,
+        end_time:      ev.end,
+        all_day:       ev.allDay ?? false,
+        member_ids:    ev.memberIds ?? [],
+        for_member_id: ev.forMemberId ?? null,
+        location:      ev.location,
+        notes:         ev.notes,
+        recurrence:    ev.recurrence,
       })
       .eq('id', ev.id);
     if (!error) setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)));

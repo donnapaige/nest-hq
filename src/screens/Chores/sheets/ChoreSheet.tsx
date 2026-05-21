@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { Avatar } from '@/src/components/primitives/Avatar';
+import { ForMemberPicker } from '@/src/components/primitives/ForMemberPicker';
 import { useHousehold } from '@/src/context/HouseholdContext';
 import type { Chore } from '@/src/lib/types';
 
@@ -20,13 +21,14 @@ interface ChoreSheetProps {
 export function ChoreSheet({ open, onClose, initial, onSave, onDelete }: ChoreSheetProps) {
   const { members } = useHousehold();
 
-  const [title,      setTitle]      = useState(initial?.title ?? '');
-  const [memberId,   setMemberId]   = useState<string>(initial?.memberId ?? members[0]?.id ?? '');
-  const [due,        setDue]        = useState(initial?.due ?? new Date().toISOString().split('T')[0]);
-  const [points,     setPoints]     = useState(initial?.points ?? 5);
-  const [recurrence, setRecurrence] = useState(initial?.recurrence ?? null);
-  const [status,     setStatus]     = useState<Chore['status']>(initial?.status ?? 'todo');
-  const [error,      setError]      = useState('');
+  const [title,       setTitle]       = useState(initial?.title ?? '');
+  const [memberId,    setMemberId]    = useState<string>(initial?.memberId ?? members[0]?.id ?? '');
+  const [forMemberId, setForMemberId] = useState<string | null>(initial?.forMemberId ?? null);
+  const [due,         setDue]         = useState(initial?.due ?? new Date().toISOString().split('T')[0]);
+  const [points,      setPoints]      = useState(initial?.points ?? 5);
+  const [recurrence,  setRecurrence]  = useState(initial?.recurrence ?? null);
+  const [status,      setStatus]      = useState<Chore['status']>(initial?.status ?? 'todo');
+  const [error,       setError]       = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleSave = () => {
@@ -36,6 +38,7 @@ export function ChoreSheet({ open, onClose, initial, onSave, onDelete }: ChoreSh
       id:          initial?.id ?? `chore-${Date.now()}`,
       title:       title.trim(),
       memberId,
+      forMemberId: forMemberId || null,
       status,
       due,
       points,
@@ -105,6 +108,9 @@ export function ChoreSheet({ open, onClose, initial, onSave, onDelete }: ChoreSh
             </div>
           </div>
         )}
+
+        {/* For (optional) */}
+        <ForMemberPicker value={forMemberId} onChange={setForMemberId} excludeId={memberId} />
 
         {/* Form fields */}
         <div className="bg-surface border border-hairline rounded-card overflow-hidden mb-4">
