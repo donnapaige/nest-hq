@@ -31,7 +31,8 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
   const [autoPay,        setAutoPay]       = useState(false);
   const [paymentMethod,  setPaymentMethod] = useState('manual');
   const [reminderDays,   setReminderDays]  = useState('3');
-  const [imageUrl,       setImageUrl]      = useState('');
+  const [imageUrl,       setImageUrl]      = useState(''); // storage path saved to DB
+  const [previewUrl,     setPreviewUrl]    = useState(''); // signed URL for display only
   const [uploading,      setUploading]     = useState(false);
   const [error,          setError]         = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,8 +45,10 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
     const path = `bills/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const { error: upErr } = await supabase.storage.from('bill-images').upload(path, file);
     if (upErr) { setError('Image upload failed'); setUploading(false); return; }
-    const { data } = supabase.storage.from('bill-images').getPublicUrl(path);
-    setImageUrl(data.publicUrl);
+    // Store the path (not a public URL); generate a 1-hour signed URL for preview only
+    const { data: signed } = await supabase.storage.from('bill-images').createSignedUrl(path, 3600);
+    setImageUrl(path);         // save the storage path to DB
+    if (signed?.signedUrl) setPreviewUrl(signed.signedUrl);
     setUploading(false);
   };
 
@@ -67,7 +70,7 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
     });
     setName(''); setVendor(''); setAmount(''); setRecurrence('monthly');
     setAutoPay(false); setPaymentMethod('manual'); setReminderDays('3');
-    setImageUrl(''); setError('');
+    setImageUrl(''); setPreviewUrl(''); setError('');
     onClose();
   };
 
@@ -105,9 +108,9 @@ export function AddBillSheet({ open, onClose, onSave }: AddBillSheetProps) {
           {imageUrl ? (
             <div className="relative rounded-xl overflow-hidden h-36" style={{ border: '1px solid #E8DFCB' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt="Bill" className="w-full h-full object-cover" />
+              <img src={previewUrl} alt="Bill" className="w-full h-full object-cover" />
               <button
-                onClick={() => setImageUrl('')}
+                onClick={() => { setImageUrl(''); setPreviewUrl(''); }}
                 className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
                 style={{ background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer' }}
               >
