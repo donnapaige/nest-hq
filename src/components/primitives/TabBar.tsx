@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Icon } from './Icon';
 
-type TabId = 'today' | 'calendar' | 'chores' | 'shop' | 'bills' | 'profile';
+type TabId = 'today' | 'calendar' | 'chores' | 'shop' | 'bills' | 'family';
 
 interface TabBarProps {
   active: TabId;
@@ -13,9 +13,9 @@ const TABS: { id: TabId; icon: Parameters<typeof Icon>[0]['name']; label: string
   { id: 'today',    icon: 'sun',      label: 'Today',    href: '/'         },
   { id: 'calendar', icon: 'calendar', label: 'Calendar', href: '/calendar' },
   { id: 'chores',   icon: 'check',    label: 'Chores',   href: '/chores'   },
-  { id: 'shop',     icon: 'cart',     label: 'Shop',     href: '/shop'     },
+  { id: 'shop',     icon: 'cart',     label: 'Lists',    href: '/shop'     },
   { id: 'bills',    icon: 'coin',     label: 'Bills',    href: '/bills'    },
-  { id: 'profile',  icon: 'user',     label: 'Profile',  href: '/profile'  },
+  { id: 'family',   icon: 'users',    label: 'Family',   href: '/family'   },
 ];
 
 export function TabBar({ active }: TabBarProps) {
@@ -38,25 +38,13 @@ export function TabBar({ active }: TabBarProps) {
               key={t.id}
               href={t.href}
               className="flex flex-col items-center gap-[3px] px-2.5 py-1.5 rounded-[14px] min-w-[50px] no-underline transition-colors duration-[200ms]"
-              style={{
-                background: on ? '#DBA03A24' : 'transparent',
-              }}
+              style={{ background: on ? '#DBA03A24' : 'transparent' }}
               aria-current={on ? 'page' : undefined}
             >
-              <Icon
-                name={t.icon}
-                size={20}
-                color={on ? '#DBA03A' : '#8A7E6B'}
-                stroke={on ? 2.2 : 1.8}
-              />
+              <Icon name={t.icon} size={20} color={on ? '#DBA03A' : '#8A7E6B'} stroke={on ? 2.2 : 1.8} />
               <span
                 className="leading-none"
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: on ? 700 : 600,
-                  color: on ? '#DBA03A' : '#8A7E6B',
-                  letterSpacing: 0.1,
-                }}
+                style={{ fontSize: 10.5, fontWeight: on ? 700 : 600, color: on ? '#DBA03A' : '#8A7E6B', letterSpacing: 0.1 }}
               >
                 {t.label}
               </span>

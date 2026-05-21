@@ -138,7 +138,7 @@ export function ProfileScreen() {
         </div>
       </div>
 
-      <TabBar active="profile" />
+      <TabBar active="family" />
     </div>
   );
 }

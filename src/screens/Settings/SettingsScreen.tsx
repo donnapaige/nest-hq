@@ -211,7 +211,7 @@ export function SettingsScreen() {
         </div>
       )}
 
-      <TabBar active="profile" />
+      <TabBar active="family" />
     </div>
   );
 }

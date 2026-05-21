@@ -222,7 +222,7 @@ export function MembersScreen() {
         </div>
       )}
 
-      <TabBar active="profile" />
+      <TabBar active="family" />
     </div>
   );
 }

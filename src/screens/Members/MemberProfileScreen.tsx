@@ -378,7 +378,7 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
         </div>
       )}
 
-      <TabBar active="profile" />
+      <TabBar active="family" />
     </div>
   );
 }

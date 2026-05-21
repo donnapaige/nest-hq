@@ -175,7 +175,7 @@ export function FeedScreen() {
         )}
       </div>
 
-      <TabBar active="profile" />
+      <TabBar active="family" />
     </div>
   );
 }
