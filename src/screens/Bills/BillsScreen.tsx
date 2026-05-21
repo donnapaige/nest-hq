@@ -26,7 +26,7 @@ import type { Bill, SavingsGoal } from '@/src/lib/types';
 export function BillsScreen() {
   const { formatMoney } = useHousehold();
   const { bills, status: billsStatus, togglePaid, addBill, updateBill, updateAmount } = useBills();
-  const { goals, addGoal, deposit }                         = useGoals();
+  const { goals, addGoal, deposit, deleteGoal }             = useGoals();
   const { logs, loading: fuelLoading, addLog, deleteLog, totalSpent, totalLiters, avgPrice } = useFuelLog();
 
   const [tab,         setTab]        = useState<BillsTab>('bills');
@@ -104,7 +104,7 @@ export function BillsScreen() {
               ) : (
                 <Section title="Savings Goals" action="See all" onAction={() => {}}>
                   {goals.map((g) => (
-                    <GoalCard key={g.id} goal={g} onDeposit={openDeposit} />
+                    <GoalCard key={g.id} goal={g} onDeposit={openDeposit} onDelete={deleteGoal} />
                   ))}
                 </Section>
               )}

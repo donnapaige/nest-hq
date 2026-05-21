@@ -89,7 +89,6 @@ export function ChoresScreen() {
             active={activeFilters}
             onToggle={toggleFilter}
             onClearAll={clearFilters}
-            totalCount={5}
           />
 
           {/* Board content */}

@@ -18,7 +18,7 @@ import type { CalendarEvent } from '@/src/lib/types';
 const TODAY = '2026-05-14';
 
 export function CalendarScreen() {
-  const { events, view, setView, activeFilters, toggleFilter, clearFilters, status, addEvent, updateEvent } = useCalendar();
+  const { events, view, setView, activeFilters, toggleFilter, clearFilters, status, addEvent, updateEvent, deleteEvent } = useCalendar();
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | undefined>();
@@ -52,7 +52,6 @@ export function CalendarScreen() {
         active={activeFilters}
         onToggle={toggleFilter}
         onClearAll={clearFilters}
-        totalCount={5}
       />
 
       {view === 'week' && (
@@ -111,6 +110,7 @@ export function CalendarScreen() {
         onClose={() => setSheetOpen(false)}
         initial={editingEvent}
         onSave={handleSave}
+        onDelete={deleteEvent}
       />
     </div>
   );

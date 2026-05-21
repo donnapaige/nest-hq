@@ -102,6 +102,12 @@ export function useCalendar() {
     if (!error) setEvents((prev) => prev.map((e) => (e.id === ev.id ? ev : e)));
   }, [householdId]);
 
+  const deleteEvent = useCallback(async (id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    const supabase = createClient();
+    await supabase.from('events').delete().eq('id', id);
+  }, []);
+
   return {
     events: visibleEvents,
     allEvents: events,
@@ -109,6 +115,6 @@ export function useCalendar() {
     activeFilters, toggleFilter, clearFilters,
     weekOffset, setWeekOffset,
     status,
-    addEvent, updateEvent,
+    addEvent, updateEvent, deleteEvent,
   };
 }

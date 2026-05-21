@@ -1,54 +1,77 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { RecurrenceModal } from './RecurrenceModal';
-import { MEMBER_IDS } from '@/src/lib/members';
-import type { CalendarEvent, MemberId, RRule } from '@/src/lib/types';
+import { useHousehold } from '@/src/context/HouseholdContext';
+import type { CalendarEvent, RRule } from '@/src/lib/types';
 
 interface EventSheetProps {
   open: boolean;
   onClose: () => void;
   initial?: Partial<CalendarEvent>;
   onSave: (ev: CalendarEvent) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function EventSheet({ open, onClose, initial, onSave }: EventSheetProps) {
-  const [title, setTitle]         = useState(initial?.title ?? '');
-  const [members, setMembers]     = useState<MemberId[]>(initial?.memberIds ?? ['maya']);
-  const [date, setDate]           = useState(initial?.start?.split('T')[0] ?? '2026-05-14');
-  const [startTime, setStartTime] = useState(initial?.start?.split('T')[1]?.slice(0, 5) ?? '09:00');
-  const [endTime, setEndTime]     = useState(initial?.end?.split('T')[1]?.slice(0, 5) ?? '10:00');
-  const [recurrence, setRecurrence] = useState<RRule | null>(initial?.recurrence ?? null);
-  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
-  const [location, setLocation]   = useState(initial?.location ?? '');
-  const [notes, setNotes]         = useState(initial?.notes ?? '');
-  const [error, setError]         = useState('');
+export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSheetProps) {
+  const { members } = useHousehold();
 
-  const toggleMember = (id: MemberId) =>
-    setMembers((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const [title,          setTitle]          = useState(initial?.title ?? '');
+  const [selectedIds,    setSelectedIds]    = useState<string[]>(initial?.memberIds ?? []);
+  const [date,           setDate]           = useState(initial?.start?.split('T')[0] ?? new Date().toISOString().split('T')[0]);
+  const [startTime,      setStartTime]      = useState(initial?.start?.split('T')[1]?.slice(0, 5) ?? '09:00');
+  const [endTime,        setEndTime]        = useState(initial?.end?.split('T')[1]?.slice(0, 5) ?? '10:00');
+  const [recurrence,     setRecurrence]     = useState<RRule | null>(initial?.recurrence ?? null);
+  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
+  const [location,       setLocation]       = useState(initial?.location ?? '');
+  const [notes,          setNotes]          = useState(initial?.notes ?? '');
+  const [error,          setError]          = useState('');
+  const [confirmDelete,  setConfirmDelete]  = useState(false);
+
+  // Reset form when initial changes (switching between new/edit or different events)
+  useEffect(() => {
+    setTitle(initial?.title ?? '');
+    setSelectedIds(initial?.memberIds ?? []);
+    setDate(initial?.start?.split('T')[0] ?? new Date().toISOString().split('T')[0]);
+    setStartTime(initial?.start?.split('T')[1]?.slice(0, 5) ?? '09:00');
+    setEndTime(initial?.end?.split('T')[1]?.slice(0, 5) ?? '10:00');
+    setRecurrence(initial?.recurrence ?? null);
+    setLocation(initial?.location ?? '');
+    setNotes(initial?.notes ?? '');
+    setError('');
+    setConfirmDelete(false);
+  }, [initial]);
+
+  const toggleMember = (id: string) =>
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   const handleSave = () => {
     if (!title.trim()) { setError('Title is required'); return; }
-    if (members.length === 0) { setError('Select at least one member'); return; }
     setError('');
     onSave({
-      id: initial?.id ?? `ev-${Date.now()}`,
-      title: title.trim(),
-      start: `${date}T${startTime}`,
-      end:   `${date}T${endTime}`,
-      memberIds: members,
-      location: location || undefined,
-      notes: notes || undefined,
+      id:        initial?.id ?? `ev-${Date.now()}`,
+      title:     title.trim(),
+      start:     `${date}T${startTime}`,
+      end:       `${date}T${endTime}`,
+      memberIds: selectedIds,
+      location:  location || undefined,
+      notes:     notes || undefined,
       recurrence,
     });
     onClose();
   };
 
-  const rowCls = 'flex items-center h-14 px-4 border-b border-hairline';
+  const handleDelete = () => {
+    if (!initial?.id || !onDelete) return;
+    onDelete(initial.id);
+    onClose();
+  };
+
+  const rowCls   = 'flex items-center h-14 px-4 border-b border-hairline';
   const labelCls = 'text-[13px] text-muted font-medium w-24 shrink-0';
-  const valCls = 'flex-1 text-[15px] text-ink font-medium bg-transparent border-none outline-none';
+  const valCls   = 'flex-1 text-[15px] text-ink font-medium bg-transparent border-none outline-none';
 
   return (
     <>
@@ -79,25 +102,27 @@ export function EventSheet({ open, onClose, initial, onSave }: EventSheetProps) 
           />
 
           {/* Member picker */}
-          <div className="mb-4">
-            <div className="text-label text-muted mb-2">Who</div>
-            <div className="flex gap-2">
-              {MEMBER_IDS.map((id) => (
-                <button
-                  key={id}
-                  onClick={() => toggleMember(id)}
-                  className={`rounded-full border-2 transition-all duration-[200ms] p-0 cursor-pointer ${
-                    members.includes(id) ? 'border-transparent' : 'border-transparent opacity-40'
-                  }`}
-                >
-                  <Avatar member={id} size={36} ring={members.includes(id)} />
-                </button>
-              ))}
+          {members.length > 0 && (
+            <div className="mb-4">
+              <div className="text-[13px] font-medium mb-2" style={{ color: '#8A7E6B' }}>Who</div>
+              <div className="flex gap-2 flex-wrap">
+                {members.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMember(m.id)}
+                    className="flex flex-col items-center gap-1"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: selectedIds.includes(m.id) ? 1 : 0.4 }}
+                  >
+                    <Avatar member={m.id} size={40} ring={selectedIds.includes(m.id)} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#334266', maxWidth: 48, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Form fields */}
-          <div className="bg-surface-alt border border-hairline rounded-card overflow-hidden">
+          <div className="bg-surface-alt border border-hairline rounded-card overflow-hidden mb-4">
             <div className={rowCls}>
               <span className={labelCls}>Date</span>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={valCls} />
@@ -119,9 +144,11 @@ export function EventSheet({ open, onClose, initial, onSave }: EventSheetProps) 
               className={`${rowCls} w-full text-left border-none cursor-pointer bg-transparent`}
             >
               <span className={labelCls}>Repeat</span>
-              <span className={`${valCls} text-ink`}>{recurrence ? recurrence.freq.charAt(0) + recurrence.freq.slice(1).toLowerCase() : 'Does not repeat'}</span>
+              <span className={`${valCls} text-ink`}>
+                {recurrence ? recurrence.freq.charAt(0) + recurrence.freq.slice(1).toLowerCase() : 'Does not repeat'}
+              </span>
             </button>
-            <div className="px-4 pt-2 pb-3">
+            <div className="px-4 pt-2 pb-3 border-none">
               <span className={labelCls + ' block mb-1'}>Notes</span>
               <textarea
                 placeholder="Add notes"
@@ -132,6 +159,38 @@ export function EventSheet({ open, onClose, initial, onSave }: EventSheetProps) 
               />
             </div>
           </div>
+
+          {/* Delete (edit mode only) */}
+          {initial?.id && onDelete && (
+            <div className="mt-2">
+              {confirmDelete ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDelete}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
+                    style={{ background: '#C65A3A', border: 'none', cursor: 'pointer' }}
+                  >
+                    Yes, delete event
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold"
+                    style={{ background: '#F0E5D2', color: '#334266', border: 'none', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full py-3 text-sm font-semibold"
+                  style={{ color: '#C65A3A', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  Delete event
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </BottomSheet>
 

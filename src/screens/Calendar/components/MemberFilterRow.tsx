@@ -8,10 +8,9 @@ interface MemberFilterRowProps {
   active: MemberId[];
   onToggle: (id: MemberId) => void;
   onClearAll: () => void;
-  totalCount: number;
 }
 
-export function MemberFilterRow({ active, onToggle, onClearAll, totalCount }: MemberFilterRowProps) {
+export function MemberFilterRow({ active, onToggle, onClearAll }: MemberFilterRowProps) {
   const { members } = useHousehold();
   const allActive = active.length === 0;
 
@@ -32,7 +31,7 @@ export function MemberFilterRow({ active, onToggle, onClearAll, totalCount }: Me
             color: allActive ? '#334266' : '#fff',
           }}
         >
-          {totalCount}
+          {members.length}
         </span>
         <span className="text-[12px] font-bold">All</span>
       </button>

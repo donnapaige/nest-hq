@@ -70,5 +70,11 @@ export function useGoals() {
       .eq('id', goalId);
   }, [goals]);
 
-  return { goals, addGoal, deposit };
+  const deleteGoal = useCallback(async (id: string) => {
+    setGoals((prev) => prev.filter((g) => g.id !== id));
+    const supabase = createClient();
+    await supabase.from('savings_goals').delete().eq('id', id);
+  }, []);
+
+  return { goals, addGoal, deposit, deleteGoal };
 }
