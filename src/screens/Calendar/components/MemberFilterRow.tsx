@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar } from '@/src/components/primitives/Avatar';
-import { MEMBERS, MEMBER_IDS } from '@/src/lib/members';
+import { useHousehold } from '@/src/context/HouseholdContext';
 import type { MemberId } from '@/src/lib/types';
 
 interface MemberFilterRowProps {
@@ -12,6 +12,7 @@ interface MemberFilterRowProps {
 }
 
 export function MemberFilterRow({ active, onToggle, onClearAll, totalCount }: MemberFilterRowProps) {
+  const { members } = useHousehold();
   const allActive = active.length === 0;
 
   return (
@@ -36,23 +37,22 @@ export function MemberFilterRow({ active, onToggle, onClearAll, totalCount }: Me
         <span className="text-[12px] font-bold">All</span>
       </button>
 
-      {/* Member chips */}
-      {MEMBER_IDS.map((id) => {
-        const m = MEMBERS[id];
-        const isOn = active.includes(id);
+      {/* Member chips — populated from real household members */}
+      {members.map((m) => {
+        const isOn = active.includes(m.id);
         return (
           <button
-            key={id}
-            onClick={() => onToggle(id)}
+            key={m.id}
+            onClick={() => onToggle(m.id)}
             className={`flex items-center gap-1.5 rounded-pill shrink-0 border cursor-pointer transition-colors duration-[200ms] ${
               isOn ? 'border-transparent' : 'bg-surface border-hairline'
             }`}
             style={{
               padding: '6px 12px 6px 6px',
-              background: isOn ? m.soft : undefined,
+              background: isOn ? m.softColor : undefined,
             }}
           >
-            <Avatar member={id} size={22} />
+            <Avatar member={m.id} size={22} />
             <span className="text-[12px] font-semibold text-ink">{m.name}</span>
           </button>
         );

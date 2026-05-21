@@ -8,11 +8,7 @@ export interface PresencePeer {
 }
 
 export function usePresence() {
-  /* Simulated static presence for v1 */
-  const peers: PresencePeer[] = [
-    { memberId: 'david', lastEditAt: Date.now() - 2000 },
-    { memberId: 'lola',  lastEditAt: Date.now() - 45000 },
-  ];
+  const peers: PresencePeer[] = [];
 
   const activePeers = peers.filter(
     (p) => Date.now() - p.lastEditAt < 30_000

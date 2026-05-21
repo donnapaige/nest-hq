@@ -1,4 +1,4 @@
-export type MemberId = 'maya' | 'david' | 'sofia' | 'mateo' | 'lola';
+export type MemberId = string;
 
 export interface Member {
   id: MemberId;
