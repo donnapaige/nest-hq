@@ -66,6 +66,33 @@ export function useBills() {
     await supabase.from('bills').update({ amount, amount_confirmed: true }).eq('id', id);
   }, []);
 
+  const updateBill = useCallback(async (id: string, bill: Omit<Bill, 'id'> & { imageUrl?: string; paymentMethod?: string; reminderDaysBefore?: number }) => {
+    const supabase = createClient();
+    const isVariable = bill.billType === 'variable';
+    const { data, error } = await supabase
+      .from('bills')
+      .update({
+        name:                 bill.name,
+        vendor:               bill.vendor,
+        amount:               bill.amount,
+        due_date:             bill.dueDate,
+        auto_pay:             bill.autoPay,
+        recurrence:           bill.recurrence,
+        category:             bill.category,
+        image_url:            bill.imageUrl,
+        payment_method:       bill.paymentMethod,
+        reminder_days_before: bill.reminderDaysBefore,
+        bill_type:            bill.billType ?? 'fixed',
+        arrival_day:          bill.arrivalDay ?? null,
+        amount_confirmed:     isVariable ? (bill.amountConfirmed ?? false) : true,
+        remind_arrival:       bill.remindArrival ?? false,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && data) setBills((prev) => prev.map((b) => b.id === id ? mapRow(data) : b));
+  }, []);
+
   const addBill = useCallback(async (bill: Omit<Bill, 'id'> & { imageUrl?: string; paymentMethod?: string; reminderDaysBefore?: number }) => {
     if (!householdId) return;
     const supabase = createClient();
@@ -95,5 +122,5 @@ export function useBills() {
     if (!error && data) setBills((prev) => [...prev, mapRow(data)]);
   }, [householdId]);
 
-  return { bills, status, togglePaid, addBill, updateAmount };
+  return { bills, status, togglePaid, addBill, updateBill, updateAmount };
 }

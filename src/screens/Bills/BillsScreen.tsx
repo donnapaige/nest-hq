@@ -13,6 +13,7 @@ import { BillsSkeleton } from './components/BillsSkeleton';
 import { BillsEmpty } from './components/BillsEmpty';
 import { SavingsEmpty } from './components/SavingsEmpty';
 import { AddBillSheet } from './sheets/AddBillSheet';
+import { EditBillSheet } from './sheets/EditBillSheet';
 import { AddGoalSheet } from './sheets/AddGoalSheet';
 import { DepositSheet } from './sheets/DepositSheet';
 import { AddFuelSheet } from './sheets/AddFuelSheet';
@@ -20,20 +21,24 @@ import { useBills } from './hooks/useBills';
 import { useGoals } from './hooks/useGoals';
 import { useFuelLog } from './hooks/useFuelLog';
 import type { BillsTab } from './components/TabSwitcher';
-import type { SavingsGoal } from '@/src/lib/types';
+import type { Bill, SavingsGoal } from '@/src/lib/types';
 
 export function BillsScreen() {
   const { formatMoney } = useHousehold();
-  const { bills, status: billsStatus, togglePaid, addBill, updateAmount } = useBills();
+  const { bills, status: billsStatus, togglePaid, addBill, updateBill, updateAmount } = useBills();
   const { goals, addGoal, deposit }                         = useGoals();
   const { logs, loading: fuelLoading, addLog, deleteLog, totalSpent, totalLiters, avgPrice } = useFuelLog();
 
   const [tab,         setTab]        = useState<BillsTab>('bills');
   const [addBillOpen, setAddBillOpen]= useState(false);
+  const [editBillOpen,setEditBillOpen]=useState(false);
+  const [editingBill, setEditingBill]= useState<Bill | null>(null);
   const [addGoalOpen, setAddGoalOpen]= useState(false);
   const [depositOpen, setDepositOpen]= useState(false);
   const [addFuelOpen, setAddFuelOpen]= useState(false);
   const [selectedGoal,setSelectedGoal]=useState<SavingsGoal | undefined>();
+
+  const openEditBill = (bill: Bill) => { setEditingBill(bill); setEditBillOpen(true); };
 
   const openAdd = () => {
     if (tab === 'bills')   setAddBillOpen(true);
@@ -85,7 +90,7 @@ export function BillsScreen() {
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {bills.map((b) => (
-                    <BillCard key={b.id} bill={b} onTogglePaid={togglePaid} onUpdateAmount={updateAmount} />
+                    <BillCard key={b.id} bill={b} onTogglePaid={togglePaid} onUpdateAmount={updateAmount} onEdit={openEditBill} />
                   ))}
                 </div>
               )}
@@ -192,6 +197,12 @@ export function BillsScreen() {
         open={addBillOpen}
         onClose={() => setAddBillOpen(false)}
         onSave={addBill}
+      />
+      <EditBillSheet
+        open={editBillOpen}
+        bill={editingBill}
+        onClose={() => { setEditBillOpen(false); setEditingBill(null); }}
+        onSave={updateBill}
       />
       <AddGoalSheet
         open={addGoalOpen}

@@ -9,6 +9,7 @@ interface BillCardProps {
   bill: Bill;
   onTogglePaid: (id: string) => void;
   onUpdateAmount: (id: string, amount: number) => void;
+  onEdit: (bill: Bill) => void;
 }
 
 function formatDueDate(iso: string) {
@@ -25,7 +26,7 @@ function isArrivalDue(arrivalDay: number | null | undefined): boolean {
   return new Date().getDate() >= arrivalDay;
 }
 
-export function BillCard({ bill, onTogglePaid, onUpdateAmount }: BillCardProps) {
+export function BillCard({ bill, onTogglePaid, onUpdateAmount, onEdit }: BillCardProps) {
   const { formatMoney } = useHousehold();
   const { month, day } = formatDueDate(bill.dueDate);
   const days    = daysUntilDue(bill.dueDate);
@@ -100,6 +101,19 @@ export function BillCard({ bill, onTogglePaid, onUpdateAmount }: BillCardProps) 
           <button onClick={() => setEditingAmount(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7E6B', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>✕</button>
         </div>
       )}
+
+      {/* Edit button */}
+      <button
+        onClick={() => onEdit(bill)}
+        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center z-10"
+        style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer' }}
+        aria-label="Edit bill"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#334266" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
 
       {/* Main card row */}
       <div className="flex items-center gap-3 px-4 py-3.5 relative">
