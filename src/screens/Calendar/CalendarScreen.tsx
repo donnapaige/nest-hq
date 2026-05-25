@@ -15,7 +15,10 @@ import { EventSheet } from './sheets/EventSheet';
 import { useCalendar } from './hooks/useCalendar';
 import type { CalendarEvent } from '@/src/lib/types';
 
-const TODAY = '2026-05-14';
+const todayDate = new Date();
+const TODAY = todayDate.toISOString().split('T')[0];
+const CURRENT_YEAR  = todayDate.getFullYear();
+const CURRENT_MONTH = todayDate.getMonth(); // 0-based
 
 export function CalendarScreen() {
   const { events, view, setView, activeFilters, toggleFilter, clearFilters, status, addEvent, updateEvent, deleteEvent } = useCalendar();
@@ -36,14 +39,17 @@ export function CalendarScreen() {
 
   const rangeLabel = (() => {
     const first = weekDays[0], last = weekDays[6];
-    return `May ${first.n} – ${last.n}`;
+    const monthName = new Date(first.date + 'T12:00:00').toLocaleString('default', { month: 'long' });
+    return `${monthName} ${first.n} – ${last.n}`;
   })();
+
+  const monthTitle = todayDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
     <div className="bg-bg h-full font-sans text-ink relative overflow-hidden flex flex-col">
       <CalendarHeader
         eyebrow="This week"
-        title={view === 'week' ? rangeLabel : 'May 2026'}
+        title={view === 'week' ? rangeLabel : monthTitle}
         view={view}
         onViewChange={setView}
       />
@@ -91,8 +97,8 @@ export function CalendarScreen() {
               </>
             ) : (
               <MonthGrid
-                year={2026}
-                month={4}
+                year={CURRENT_YEAR}
+                month={CURRENT_MONTH}
                 events={events}
                 activeFilters={activeFilters}
                 today={TODAY}

@@ -40,7 +40,7 @@ export function WeekStrip({ days, selectedDate, onSelect }: WeekStripProps) {
 }
 
 export function buildWeekDays(weekOffset = 0): DayInfo[] {
-  const today = new Date('2026-05-14');
+  const today = new Date();
   const startOfWeek = new Date(today);
   const dayOfWeek = today.getDay(); // 0=Sun
   startOfWeek.setDate(today.getDate() - dayOfWeek + 1 + weekOffset * 7); // Start Monday
