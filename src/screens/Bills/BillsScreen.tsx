@@ -25,7 +25,7 @@ import type { Bill, SavingsGoal } from '@/src/lib/types';
 
 export function BillsScreen() {
   const { formatMoney } = useHousehold();
-  const { bills, status: billsStatus, togglePaid, addBill, updateBill, updateAmount } = useBills();
+  const { bills, status: billsStatus, togglePaid, addBill, updateBill, updateAmount, deleteBill } = useBills();
   const { goals, addGoal, deposit, deleteGoal }             = useGoals();
   const { logs, loading: fuelLoading, addLog, deleteLog, totalSpent, totalLiters, avgPrice } = useFuelLog();
 
@@ -90,7 +90,7 @@ export function BillsScreen() {
               ) : (
                 <div className="flex flex-col gap-2.5">
                   {bills.map((b) => (
-                    <BillCard key={b.id} bill={b} onTogglePaid={togglePaid} onUpdateAmount={updateAmount} onEdit={openEditBill} />
+                    <BillCard key={b.id} bill={b} onTogglePaid={togglePaid} onUpdateAmount={updateAmount} onEdit={openEditBill} onDelete={deleteBill} />
                   ))}
                 </div>
               )}

@@ -1,19 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { useHousehold } from '@/src/context/HouseholdContext';
 import { TabBar } from '@/src/components/primitives/TabBar';
 import { Avatar } from '@/src/components/primitives/Avatar';
+import { JoinHouseholdSheet } from './sheets/JoinHouseholdSheet';
 
 export function SettingsScreen() {
   const { signOut, user } = useAuth();
-  const { householdName, members, currentMember } = useHousehold();
+  const { householdName, householdId, members, currentMember, householdsList, switchHousehold, refetch } = useHousehold();
   const router = useRouter();
+
+  const [joinSheetOpen, setJoinSheetOpen] = useState(false);
 
   const handleSignOut = async () => { await signOut(); router.push('/login'); };
 
-  const isOwner = currentMember && members[0]?.id === currentMember.id;
+  const isOwner  = currentMember && members[0]?.id === currentMember.id;
   const roleLabel = currentMember?.role || 'Member';
   const ownerBadge = isOwner ? 'Owner' : 'Member';
 
@@ -55,6 +59,44 @@ export function SettingsScreen() {
           </div>
         )}
 
+        {/* HOUSEHOLD switcher — visible only when user belongs to 2+ households */}
+        {householdsList.length > 1 && (
+          <div className="px-5 mb-6">
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>Household</p>
+            <div className="rounded-[18px] overflow-hidden" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB' }}>
+              {householdsList.map((h, i) => (
+                <div key={h.id}>
+                  {i > 0 && <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />}
+                  <button
+                    onClick={() => switchHousehold(h.id)}
+                    className="w-full px-4 py-3.5 flex items-center gap-3 text-left"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <div className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 text-[20px]" style={{ background: '#F0E5D2' }}>
+                      🏡
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E' }}>{h.name}</p>
+                      {h.id === householdId && (
+                        <p style={{ fontSize: 12, color: '#2D6A4F', marginTop: 1, fontWeight: 600 }}>Active</p>
+                      )}
+                    </div>
+                    {h.id === householdId ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8BFB0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 6l6 6-6 6"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* MANAGE section */}
         <div className="px-5 mb-6">
           <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 }}>Manage</p>
@@ -84,6 +126,15 @@ export function SettingsScreen() {
               subtitle="Choose what you get notified about"
               onPress={() => {}}
             />
+
+            <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />
+
+            <ManageRow
+              icon="🔑"
+              label="Join Another Household"
+              subtitle="Enter an invite code to join"
+              onPress={() => setJoinSheetOpen(true)}
+            />
           </div>
         </div>
 
@@ -107,6 +158,12 @@ export function SettingsScreen() {
       </div>
 
       <TabBar active="family" />
+
+      <JoinHouseholdSheet
+        open={joinSheetOpen}
+        onClose={() => setJoinSheetOpen(false)}
+        onJoined={refetch}
+      />
     </div>
   );
 }

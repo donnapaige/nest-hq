@@ -11,9 +11,10 @@ interface MonthGridProps {
   events: CalendarEvent[];
   activeFilters: MemberId[];
   today?: string;
+  onDaySelect?: (date: string) => void;
 }
 
-export function MonthGrid({ year, month, events, activeFilters, today }: MonthGridProps) {
+export function MonthGrid({ year, month, events, activeFilters, today, onDaySelect }: MonthGridProps) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -46,10 +47,11 @@ export function MonthGrid({ year, month, events, activeFilters, today }: MonthGr
             : dayEvents.filter((e) => e.memberIds.some((id) => activeFilters.includes(id as MemberId)));
 
           return (
-            <div
+            <button
               key={i}
+              onClick={() => onDaySelect?.(iso)}
               className="flex flex-col items-center py-1 min-h-[48px] rounded-[8px]"
-              style={{ background: isToday ? '#DBA03A3D' : 'transparent' }}
+              style={{ background: isToday ? '#DBA03A3D' : 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0' }}
             >
               <span
                 className="text-[13px] font-semibold mb-0.5"
@@ -72,7 +74,7 @@ export function MonthGrid({ year, month, events, activeFilters, today }: MonthGr
                   <span className="text-[9px] text-muted font-bold">+{filtered.length - 3}</span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

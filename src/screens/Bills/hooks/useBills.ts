@@ -125,5 +125,11 @@ export function useBills() {
     if (!error && data) setBills((prev) => [...prev, mapRow(data)]);
   }, [householdId]);
 
-  return { bills, status, togglePaid, addBill, updateBill, updateAmount };
+  const deleteBill = useCallback(async (id: string) => {
+    setBills((prev) => prev.filter((b) => b.id !== id));
+    const supabase = createClient();
+    await supabase.from('bills').delete().eq('id', id);
+  }, []);
+
+  return { bills, status, togglePaid, addBill, updateBill, updateAmount, deleteBill };
 }

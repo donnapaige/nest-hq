@@ -9,20 +9,35 @@ interface CalendarHeaderProps {
   title: string;
   view: CalendarView;
   onViewChange: (v: CalendarView) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export function CalendarHeader({ eyebrow, title, view, onViewChange }: CalendarHeaderProps) {
+export function CalendarHeader({ eyebrow, title, view, onViewChange, onPrev, onNext }: CalendarHeaderProps) {
   return (
     <div className="px-5 pt-safe-top pb-2">
       <div className="flex items-center justify-between mb-1">
-        <div>
-          <div className="text-[13px] text-muted font-medium">{eyebrow}</div>
-          <h1 className="m-0 text-h1 font-bold text-ink" style={{ letterSpacing: -0.5 }}>{title}</h1>
+        {/* Title + prev/next arrows */}
+        <div className="flex items-center gap-2 min-w-0">
+          {onPrev && (
+            <button onClick={onPrev} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px', color: '#8A7E6B', flexShrink: 0 }} aria-label="Previous">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          )}
+          <div className="min-w-0">
+            <div className="text-[13px] text-muted font-medium">{eyebrow}</div>
+            <h1 className="m-0 text-h1 font-bold text-ink truncate" style={{ letterSpacing: -0.5 }}>{title}</h1>
+          </div>
+          {onNext && (
+            <button onClick={onNext} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px', color: '#8A7E6B', flexShrink: 0 }} aria-label="Next">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* View toggle */}
           <div className="flex bg-surface border border-hairline rounded-chip overflow-hidden">
-            {(['week', 'month'] as CalendarView[]).map((v) => (
+            {(['week', 'month', 'agenda'] as CalendarView[]).map((v) => (
               <button
                 key={v}
                 onClick={() => onViewChange(v)}

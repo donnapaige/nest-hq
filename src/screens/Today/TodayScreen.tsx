@@ -228,7 +228,7 @@ export function TodayScreen() {
               <button onClick={() => router.push('/calendar')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#DBA03A', fontWeight: 700 }}>See all</button>
             </div>
             <div className="flex flex-col gap-2">
-              {data.events.map((ev) => <EventRow key={ev.id} event={ev} />)}
+              {data.events.map((ev) => <EventRow key={ev.id} event={ev} onClick={() => router.push('/calendar')} />)}
             </div>
           </div>
         )}
@@ -240,7 +240,11 @@ export function TodayScreen() {
               <span style={{ fontSize: 12, color: '#8A7E6B' }}>{data.choresDueToday.length} left</span>
             </div>
             <div className="flex gap-[10px] overflow-x-auto scrollbar-none -mx-5 px-5 pb-1">
-              {data.choresDueToday.map((chore) => <ChoreCard key={chore.id} chore={chore} />)}
+              {data.choresDueToday.map((chore) => (
+                <div key={chore.id} onClick={() => router.push('/chores')} style={{ cursor: 'pointer' }}>
+                  <ChoreCard chore={chore} />
+                </div>
+              ))}
             </div>
           </div>
         )}

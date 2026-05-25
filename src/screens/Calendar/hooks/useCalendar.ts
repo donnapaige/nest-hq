@@ -6,7 +6,7 @@ import { useHousehold } from '@/src/context/HouseholdContext';
 import { useAuth } from '@/src/context/AuthContext';
 import type { CalendarEvent, MemberId } from '@/src/lib/types';
 
-export type CalendarView = 'week' | 'month';
+export type CalendarView = 'week' | 'month' | 'agenda';
 
 function mapRow(r: Record<string, unknown>): CalendarEvent {
   return {

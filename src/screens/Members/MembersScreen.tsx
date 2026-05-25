@@ -3,10 +3,12 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useHousehold } from '@/src/context/HouseholdContext';
+import type { HouseholdMember } from '@/src/context/HouseholdContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { TabBar } from '@/src/components/primitives/TabBar';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { createClient } from '@/src/lib/supabase/client';
+import { EditMemberSheet } from './sheets/EditMemberSheet';
 
 /* ── Types ── */
 type PermissionMap = Record<string, boolean>;
@@ -77,21 +79,22 @@ export function MembersScreen() {
   const [permsMemberId, setPermsMemberId] = useState<string | null>(null);
   const [perms,         setPerms]         = useState<PermissionMap>(defaultPerms());
 
-  /* Delete confirm */
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  /* Edit member sheet */
+  const [editingMember, setEditingMember] = useState<HouseholdMember | null>(null);
 
-  /* Role change */
-  const handleRoleChange = useCallback(async (memberId: string, access: string) => {
+  /* Save member edits */
+  const handleSaveMember = useCallback(async (id: string, updates: { name: string; access_level: string }) => {
     const supabase = createClient();
-    await supabase.from('household_members').update({ access_level: access }).eq('id', memberId);
+    await supabase.from('household_members').update(updates).eq('id', id);
+    setEditingMember(null);
     await refetch();
   }, [refetch]);
 
-  /* Delete member */
-  const handleDelete = useCallback(async (memberId: string) => {
+  /* Remove member */
+  const handleRemoveMember = useCallback(async (memberId: string) => {
     const supabase = createClient();
     await supabase.from('household_members').delete().eq('id', memberId);
-    setDeletingId(null);
+    setEditingMember(null);
     await refetch();
   }, [refetch]);
 
@@ -216,48 +219,18 @@ export function MembersScreen() {
                       </div>
                     </div>
 
-                    {/* Actions (non-current members only) */}
+                    {/* Edit button (non-current members only) */}
                     {!isMe && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Permissions button */}
-                        <button
-                          onClick={() => openPerms(m.id)}
-                          style={{ width: 32, height: 32, borderRadius: '50%', background: '#F0E5D2', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          aria-label="Permissions"
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#334266" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17 2.1l4 4-4 4"/><path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"/>
-                          </svg>
-                        </button>
-
-                        {/* Role select */}
-                        <select
-                          value={m.access_level}
-                          onChange={(e) => handleRoleChange(m.id, e.target.value)}
-                          className="text-[12px] font-semibold rounded-full px-2.5 py-1 cursor-pointer"
-                          style={{ background: '#F0E5D2', border: '1.5px solid #E8DFCB', color: '#334266', outline: 'none', appearance: 'auto' }}
-                        >
-                          {ACCESS_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </select>
-
-                        {/* Delete */}
-                        {deletingId === m.id ? (
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => handleDelete(m.id)} style={{ fontSize: 11, fontWeight: 700, color: '#C65A3A', background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>
-                            <button onClick={() => setDeletingId(null)} style={{ fontSize: 11, color: '#8A7E6B', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeletingId(m.id)}
-                            style={{ width: 28, height: 28, borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C8BFB0', fontSize: 16 }}
-                            aria-label="Remove member"
-                          >
-                            🗑
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => setEditingMember(m)}
+                        style={{ width: 32, height: 32, borderRadius: '50%', background: '#F0E5D2', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                        aria-label="Edit member"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#334266" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -282,6 +255,16 @@ export function MembersScreen() {
       </div>
 
       <TabBar active="family" />
+
+      {/* ── Edit Member Sheet ───────────────────────────────────── */}
+      <EditMemberSheet
+        open={editingMember !== null}
+        onClose={() => setEditingMember(null)}
+        member={editingMember}
+        onSave={handleSaveMember}
+        onRemove={handleRemoveMember}
+        onOpenPerms={(id) => openPerms(id)}
+      />
 
       {/* ── Invite Modal ──────────────────────────────────────────── */}
       {inviteOpen && (
