@@ -93,9 +93,8 @@ export function MembersScreen() {
   /* Remove member */
   const handleRemoveMember = useCallback(async (memberId: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from('household_members').delete().eq('id', memberId);
+    const { error } = await supabase.rpc('remove_household_member', { p_member_id: memberId });
     if (error) {
-      // Surface the error so it's visible during debugging
       alert(`Could not remove member: ${error.message}`);
       return;
     }

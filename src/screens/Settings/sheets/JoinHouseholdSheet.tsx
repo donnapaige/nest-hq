@@ -26,27 +26,12 @@ export function JoinHouseholdSheet({ open, onClose, onJoined }: JoinHouseholdShe
     setError('');
     const supabase = createClient();
 
-    // Step 1: look up the household by invite code
-    const { data: household, error: lookupError } = await supabase
-      .from('households')
-      .select('id, name')
-      .eq('invite_code', trimmed)
-      .single();
-
-    if (lookupError || !household) {
-      setError('Code not found or expired. Check with the household owner.');
-      setLoading(false);
-      return;
-    }
-
-    // Step 2: join using both household_id and invite_code
-    const { error: rpcError } = await supabase.rpc('join_household', {
-      p_household_id: household.id,
-      p_invite_code:  trimmed,
+    const { error: rpcError } = await supabase.rpc('join_household_by_code', {
+      p_invite_code: trimmed,
     });
 
     if (rpcError) {
-      setError('Could not join household. Try again.');
+      setError(rpcError.message || 'Code not found or expired. Check with the household owner.');
       setLoading(false);
       return;
     }
