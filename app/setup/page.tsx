@@ -68,12 +68,32 @@ export default function SetupPage() {
     setLoading(true);
     setError('');
     const supabase = createClient();
-    const { error: rpcError } = await supabase.rpc('join_household', { p_invite_code: code });
-    if (rpcError) {
+
+    // Step 1: look up the household by invite code
+    const { data: household, error: lookupError } = await supabase
+      .from('households')
+      .select('id, name')
+      .eq('invite_code', code)
+      .single();
+
+    if (lookupError || !household) {
       setError('Code not found or expired. Check with your household owner.');
       setLoading(false);
       return;
     }
+
+    // Step 2: join using both household_id and invite_code
+    const { error: rpcError } = await supabase.rpc('join_household', {
+      p_household_id: household.id,
+      p_invite_code:  code,
+    });
+
+    if (rpcError) {
+      setError('Could not join household. Try again.');
+      setLoading(false);
+      return;
+    }
+
     await refetch();
     router.push('/');
   };
