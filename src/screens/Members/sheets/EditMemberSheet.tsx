@@ -127,39 +127,31 @@ export function EditMemberSheet({ open, onClose, member, onSave, onRemove, onOpe
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
 
-        {/* Remove from Household */}
-        <div className="pt-2 pb-4">
-          {!confirming ? (
+        {/* Remove from Household — two-tap in place, no layout shift */}
+        <div className="pb-4 flex gap-2">
+          <button
+            onClick={confirming ? handleRemove : () => setConfirming(true)}
+            disabled={removing}
+            className="flex-1 py-3 rounded-[12px] font-semibold text-[14px]"
+            style={{
+              background: confirming ? '#C65A3A' : 'transparent',
+              border: '1.5px solid #C65A3A',
+              color: confirming ? '#fff' : '#C65A3A',
+              cursor: removing ? 'wait' : 'pointer',
+              opacity: removing ? 0.6 : 1,
+              transition: 'background 0.15s, color 0.15s',
+            }}
+          >
+            {removing ? 'Removing…' : confirming ? `Confirm Remove` : 'Remove from Household'}
+          </button>
+          {confirming && (
             <button
-              onClick={() => setConfirming(true)}
-              className="w-full py-3 rounded-[12px] font-semibold text-[14px]"
-              style={{ background: 'transparent', border: '1.5px solid #C65A3A', color: '#C65A3A', cursor: 'pointer' }}
+              onClick={() => setConfirming(false)}
+              className="py-3 px-4 rounded-[12px] font-semibold text-[14px]"
+              style={{ background: '#F0E5D2', border: 'none', color: '#334266', cursor: 'pointer', flexShrink: 0 }}
             >
-              Remove from Household
+              Cancel
             </button>
-          ) : (
-            <div className="rounded-[12px] px-4 py-3" style={{ background: '#FFF0EC', border: '1.5px solid #C65A3A' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#C65A3A', marginBottom: 10, textAlign: 'center' }}>
-                Remove {member.name} from the household?
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleRemove}
-                  disabled={removing}
-                  className="flex-1 py-2.5 rounded-[10px] font-bold text-[13px] text-white"
-                  style={{ background: '#C65A3A', border: 'none', cursor: removing ? 'wait' : 'pointer', opacity: removing ? 0.6 : 1 }}
-                >
-                  {removing ? 'Removing…' : 'Yes, Remove'}
-                </button>
-                <button
-                  onClick={() => setConfirming(false)}
-                  className="flex-1 py-2.5 rounded-[10px] font-semibold text-[13px]"
-                  style={{ background: '#fff', border: '1.5px solid #E8DFCB', color: '#334266', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
           )}
         </div>
       </div>
