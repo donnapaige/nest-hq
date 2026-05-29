@@ -6,6 +6,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useHousehold } from '@/src/context/HouseholdContext';
 import { TabBar } from '@/src/components/primitives/TabBar';
 import { Avatar } from '@/src/components/primitives/Avatar';
+import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { JoinHouseholdSheet } from './sheets/JoinHouseholdSheet';
 
 export function SettingsScreen() {
@@ -13,7 +14,8 @@ export function SettingsScreen() {
   const { householdName, householdId, members, currentMember, householdsList, switchHousehold, refetch } = useHousehold();
   const router = useRouter();
 
-  const [joinSheetOpen, setJoinSheetOpen] = useState(false);
+  const [joinSheetOpen,  setJoinSheetOpen]  = useState(false);
+  const [notifsOpen,     setNotifsOpen]     = useState(false);
 
   const handleSignOut = async () => { await signOut(); router.push('/login'); };
 
@@ -115,7 +117,7 @@ export function SettingsScreen() {
               icon="⚙️"
               label="Dashboard Modules"
               subtitle="Show, hide, and reorder widgets"
-              onPress={() => router.push('/')}
+              onPress={() => router.push('/?widgets=open')}
             />
 
             <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />
@@ -124,7 +126,7 @@ export function SettingsScreen() {
               icon="🔔"
               label="Notification Preferences"
               subtitle="Choose what you get notified about"
-              onPress={() => {}}
+              onPress={() => setNotifsOpen(true)}
             />
 
             <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />
@@ -164,6 +166,33 @@ export function SettingsScreen() {
         onClose={() => setJoinSheetOpen(false)}
         onJoined={refetch}
       />
+
+      <BottomSheet open={notifsOpen} onClose={() => setNotifsOpen(false)} snapPercent={55}>
+        <div className="pt-3 pb-6">
+          <p style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E', marginBottom: 4 }}>Notification Preferences</p>
+          <p style={{ fontSize: 13, color: '#8A7E6B', marginBottom: 20 }}>Push notifications — coming soon</p>
+          {[
+            { label: 'Bills due soon',      sub: 'Remind me 3 days before a bill is due' },
+            { label: 'New member joined',   sub: 'When someone joins the household' },
+            { label: 'Family activity',     sub: 'Daily summary of household activity' },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center justify-between py-3.5" style={{ borderBottom: '1px solid #F0EAE0' }}>
+              <div>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E' }}>{item.label}</p>
+                <p style={{ fontSize: 12, color: '#8A7E6B', marginTop: 2 }}>{item.sub}</p>
+              </div>
+              <div style={{ width: 44, height: 24, borderRadius: 12, background: '#E8DFCB', opacity: 0.5, flexShrink: 0 }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', margin: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={() => setNotifsOpen(false)}
+            className="w-full mt-5 py-3.5 rounded-[12px] font-bold text-white text-[15px]"
+            style={{ background: '#334266', border: 'none', cursor: 'pointer' }}
+          >Done</button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

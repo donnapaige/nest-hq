@@ -172,13 +172,6 @@ export function MembersScreen() {
             <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>
               Members ({members.length})
             </p>
-            <button
-              onClick={openInvite}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-bold"
-              style={{ background: '#334266', color: '#fff', border: 'none', cursor: 'pointer' }}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Invite
-            </button>
           </div>
 
           <div className="rounded-[18px] overflow-hidden" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB' }}>
@@ -243,8 +236,19 @@ export function MembersScreen() {
           </div>
         </div>
 
+        {/* Invite a Member */}
+        <div className="px-5 mt-4">
+          <button
+            onClick={openInvite}
+            className="w-full py-3.5 rounded-[14px] flex items-center justify-center gap-2 font-semibold text-[14px]"
+            style={{ background: 'transparent', border: '1.5px solid #334266', color: '#334266', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Invite a Member
+          </button>
+        </div>
+
         {/* Sign Out */}
-        <div className="px-5 mt-8">
+        <div className="px-5 mt-4">
           <button
             onClick={handleSignOut}
             className="w-full rounded-[14px] flex items-center justify-center gap-2 font-semibold"

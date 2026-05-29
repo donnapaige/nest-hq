@@ -11,9 +11,10 @@ interface CalendarHeaderProps {
   onViewChange: (v: CalendarView) => void;
   onPrev?: () => void;
   onNext?: () => void;
+  onSearch?: () => void;
 }
 
-export function CalendarHeader({ eyebrow, title, view, onViewChange, onPrev, onNext }: CalendarHeaderProps) {
+export function CalendarHeader({ eyebrow, title, view, onViewChange, onPrev, onNext, onSearch }: CalendarHeaderProps) {
   return (
     <div className="px-5 pt-safe-top pb-2">
       <div className="flex items-center justify-between mb-1">
@@ -49,7 +50,7 @@ export function CalendarHeader({ eyebrow, title, view, onViewChange, onPrev, onN
               </button>
             ))}
           </div>
-          <IconButton label="Search"><Icon name="search" size={18} color="#333333" /></IconButton>
+          <IconButton label="Search" onClick={onSearch}><Icon name="search" size={18} color="#333333" /></IconButton>
           <IconButton label="Filter"><Icon name="filter" size={18} color="#333333" /></IconButton>
         </div>
       </div>

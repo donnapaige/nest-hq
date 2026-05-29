@@ -48,6 +48,8 @@ export function CalendarScreen() {
   const [monthOffset,   setMonthOffset]   = useState(0);
   const [sheetOpen,     setSheetOpen]     = useState(false);
   const [editingEvent,  setEditingEvent]  = useState<CalendarEvent | undefined>();
+  const [searchOpen,    setSearchOpen]    = useState(false);
+  const [searchQuery,   setSearchQuery]   = useState('');
 
   // Swipe gesture tracking
   const swipeStartX = useRef(0);
@@ -55,7 +57,12 @@ export function CalendarScreen() {
 
   const weekDays = buildWeekDays(weekOffset);
 
-  const selectedDayEvents = events.filter((e) => {
+  // Search filter
+  const displayEvents = searchQuery.trim()
+    ? events.filter((e) => e.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : events;
+
+  const selectedDayEvents = displayEvents.filter((e) => {
     const localDate = new Date(e.start).toLocaleDateString('en-CA');
     return localDate === selectedDate;
   });
@@ -123,9 +130,27 @@ export function CalendarScreen() {
         title={headerTitle}
         view={view}
         onViewChange={setView}
-        onPrev={view !== 'week' ? goToPrev : undefined}
-        onNext={view !== 'week' ? goToNext : undefined}
+        onPrev={view === 'month' ? goToPrev : undefined}
+        onNext={view === 'month' ? goToNext : undefined}
+        onSearch={() => { setSearchOpen((o) => !o); setSearchQuery(''); }}
       />
+
+      {searchOpen && (
+        <div className="px-5 pb-2 flex gap-2">
+          <input
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search events…"
+            className="flex-1 px-4 py-2 rounded-[12px] text-[14px] outline-none"
+            style={{ background: '#fff', border: '1.5px solid #E8DFCB', color: '#1E1E2E' }}
+          />
+          <button
+            onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+            style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer', borderRadius: 12, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20, color: '#334266' }}
+          >×</button>
+        </div>
+      )}
 
       <MemberFilterRow
         active={activeFilters}
@@ -146,7 +171,7 @@ export function CalendarScreen() {
       >
         {status === 'loading' && <CalendarSkeleton />}
 
-        {status === 'ready' && events.length === 0 && view !== 'agenda' && (
+        {status === 'ready' && displayEvents.length === 0 && view !== 'agenda' && (
           <CalendarEmpty onAdd={() => openNew()} />
         )}
 
@@ -156,13 +181,13 @@ export function CalendarScreen() {
           </div>
         )}
 
-        {(status === 'ready' && events.length > 0) || view === 'agenda' ? (
+        {(status === 'ready' && displayEvents.length > 0) || view === 'agenda' ? (
           <div className="h-full overflow-y-auto">
             {view === 'week' && (
               <>
                 <WeekGrid
                   days={weekDays}
-                  events={events}
+                  events={displayEvents}
                   activeFilters={activeFilters}
                   onEventClick={openEdit}
                   onSlotClick={(date) => openNew(date)}
@@ -179,14 +204,14 @@ export function CalendarScreen() {
               <MonthGrid
                 year={displayYear}
                 month={displayMonth}
-                events={events}
+                events={displayEvents}
                 activeFilters={activeFilters}
                 today={TODAY}
                 onDaySelect={handleDaySelect}
               />
             )}
             {view === 'agenda' && (
-              <AgendaList events={events} onEventClick={openEdit} />
+              <AgendaList events={displayEvents} onEventClick={openEdit} />
             )}
           </div>
         ) : null}

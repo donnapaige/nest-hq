@@ -76,8 +76,36 @@ export function useMemberRecords(memberId: string) {
       })
       .select()
       .single();
-    if (!error && data) setRecords((prev) => [mapRow(data), ...prev]);
+    if (!error && data) {
+      setRecords((prev) => [mapRow(data), ...prev]);
+      // Sync appointments to calendar events
+      if (rec.type === 'appointment' && rec.recordDate && householdId) {
+        const dt = `${rec.recordDate}T09:00:00`;
+        await supabase.from('events').insert({
+          household_id:  householdId,
+          title:         rec.title,
+          start_time:    dt,
+          end_time:      `${rec.recordDate}T10:00:00`,
+          all_day:       false,
+          member_ids:    [memberId],
+          for_member_id: memberId,
+          notes:         rec.content || null,
+          created_by:    user?.id,
+        });
+      }
+    }
   }, [householdId, memberId, user]);
+
+  const updateRecord = useCallback(async (id: string, updates: Partial<Omit<MemberRecord, 'id' | 'memberId' | 'createdAt'>>) => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('member_records')
+      .update({ title: updates.title, content: updates.content, record_date: updates.recordDate, type: updates.type })
+      .eq('id', id)
+      .select()
+      .single();
+    if (data) setRecords((prev) => prev.map((r) => r.id === id ? mapRow(data) : r));
+  }, []);
 
   const deleteRecord = useCallback(async (id: string) => {
     setRecords((prev) => prev.filter((r) => r.id !== id));
@@ -85,5 +113,5 @@ export function useMemberRecords(memberId: string) {
     await supabase.from('member_records').delete().eq('id', id);
   }, []);
 
-  return { records, loading, addRecord, deleteRecord };
+  return { records, loading, addRecord, updateRecord, deleteRecord };
 }

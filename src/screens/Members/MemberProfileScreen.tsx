@@ -6,7 +6,7 @@ import { useHousehold } from '@/src/context/HouseholdContext';
 import { TabBar } from '@/src/components/primitives/TabBar';
 import { Icon } from '@/src/components/primitives/Icon';
 import { createClient } from '@/src/lib/supabase/client';
-import { useMemberRecords, TYPE_META, type RecordType } from './hooks/useMemberRecords';
+import { useMemberRecords, TYPE_META, type RecordType, type MemberRecord } from './hooks/useMemberRecords';
 import { useMemberRoutines, ALL_DAYS } from './hooks/useMemberRoutines';
 import { useMemberTasks } from './hooks/useMemberTasks';
 
@@ -35,7 +35,7 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
   const { members, refetch } = useHousehold();
   const router = useRouter();
   const member = members.find((m) => m.id === memberId);
-  const { records, addRecord, deleteRecord } = useMemberRecords(memberId);
+  const { records, addRecord, updateRecord, deleteRecord } = useMemberRecords(memberId);
   const { routines, addRoutine, toggleDone, deleteRoutine } = useMemberRoutines(memberId);
   const { tasks, addTask, toggleTask, deleteTask } = useMemberTasks(memberId);
 
@@ -58,21 +58,26 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
   const [uploading,  setUploading]  = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  /* add-record form */
+  /* add/edit record form */
   const [recType,    setRecType]    = useState<RecordType>('milestone');
   const [recTitle,   setRecTitle]   = useState('');
   const [recContent, setRecContent] = useState('');
   const [recDate,    setRecDate]    = useState('');
+  const [editingRecord, setEditingRecord] = useState<MemberRecord | null>(null);
+
+  /* record swipe-to-delete */
+  const [recTranslates, setRecTranslates] = useState<Record<string, number>>({});
+  const recStartX = useRef<Record<string, number>>({});
 
   /* add-routine form */
   const [rotTitle, setRotTitle] = useState('');
   const [rotTime,  setRotTime]  = useState('');
   const [rotDays,  setRotDays]  = useState<string[]>([]);
 
-  /* add-task form */
-  const [showAddTask, setShowAddTask] = useState(false);
-  const [taskTitle,   setTaskTitle]   = useState('');
-  const [taskDue,     setTaskDue]     = useState('');
+  /* add-task inline */
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDue,   setTaskDue]   = useState('');
+  const [taskDueOpen, setTaskDueOpen] = useState(false);
 
   if (!member) return null;
 
@@ -132,9 +137,23 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
 
   const handleSaveRecord = async () => {
     if (!recTitle.trim()) return;
-    await addRecord({ type: recType, title: recTitle.trim(), content: recContent.trim(), recordDate: recDate || null });
+    if (editingRecord) {
+      await updateRecord(editingRecord.id, { type: recType, title: recTitle.trim(), content: recContent.trim(), recordDate: recDate || null });
+    } else {
+      await addRecord({ type: recType, title: recTitle.trim(), content: recContent.trim(), recordDate: recDate || null });
+    }
     setRecTitle(''); setRecContent(''); setRecDate(''); setRecType('milestone');
+    setEditingRecord(null);
     setShowAddRecord(false);
+  };
+
+  const openEditRecord = (rec: MemberRecord) => {
+    setEditingRecord(rec);
+    setRecType(rec.type);
+    setRecTitle(rec.title);
+    setRecContent(rec.content);
+    setRecDate(rec.recordDate ?? '');
+    setShowAddRecord(true);
   };
 
   const handleSaveRoutine = async () => {
@@ -235,22 +254,44 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
               <div className="mt-3 flex flex-col gap-2.5">
                 {filteredRecords.map((rec) => {
                   const meta = TYPE_META[rec.type];
+                  const tx = recTranslates[rec.id] ?? 0;
                   return (
-                    <div key={rec.id} className="rounded-[14px] px-4 py-4" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB' }}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 flex-1">
-                          <span style={{ fontSize: 18, flexShrink: 0 }}>{meta.emoji}</span>
-                          <div className="flex-1">
-                            <p style={{ fontSize: 15, fontWeight: 700, color: '#1E1E2E' }}>{rec.title}</p>
-                            {rec.content && <p style={{ fontSize: 13, color: '#6B7280', marginTop: 3 }}>{rec.content}</p>}
-                            {rec.recordDate && <p style={{ fontSize: 11, color: '#8A7E6B', marginTop: 4 }}>📅 {new Date(rec.recordDate).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>}
+                    <div key={rec.id} className="relative overflow-hidden rounded-[14px]">
+                      {/* Red delete reveal */}
+                      <div className="absolute inset-0 flex items-center justify-end pr-5" style={{ background: '#C65A3A' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                        </svg>
+                      </div>
+                      {/* Card */}
+                      <div
+                        className="px-4 py-4"
+                        style={{ background: '#FBF8F1', border: '1px solid #E8DFCB', borderRadius: 14, transform: `translateX(${tx}px)`, transition: tx === 0 ? 'transform 0.2s' : 'none', touchAction: 'pan-y' }}
+                        onPointerDown={(e) => { recStartX.current[rec.id] = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
+                        onPointerMove={(e) => { const dx = e.clientX - (recStartX.current[rec.id] ?? e.clientX); setRecTranslates((p) => ({ ...p, [rec.id]: Math.min(0, dx) })); }}
+                        onPointerUp={() => { if ((recTranslates[rec.id] ?? 0) <= -80) { deleteRecord(rec.id); } else { setRecTranslates((p) => ({ ...p, [rec.id]: 0 })); } }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2 flex-1">
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>{meta.emoji}</span>
+                            <div className="flex-1">
+                              <p style={{ fontSize: 15, fontWeight: 700, color: '#1E1E2E' }}>{rec.title}</p>
+                              {rec.content && <p style={{ fontSize: 13, color: '#6B7280', marginTop: 3 }}>{rec.content}</p>}
+                              {rec.recordDate && <p style={{ fontSize: 11, color: '#8A7E6B', marginTop: 4 }}>📅 {new Date(rec.recordDate + 'T12:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: `${meta.color}22`, color: meta.color }}>{meta.label}</span>
+                            <button
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={() => openEditRecord(rec)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+                            >
+                              <Icon name="edit" size={13} color="#8A7E6B" />
+                            </button>
                           </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0" style={{ background: `${meta.color}22`, color: meta.color }}>{meta.label}</span>
                       </div>
-                      <button onClick={() => deleteRecord(rec.id)} className="mt-3 text-xs font-medium" style={{ color: '#C65A3A', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        Remove
-                      </button>
                     </div>
                   );
                 })}
@@ -329,10 +370,42 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
         {/* ─── Tasks tab ───────────────────────────────────── */}
         {tab === 'tasks' && (
           <div className="px-5 mt-4">
-            <button onClick={() => setShowAddTask(true)} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm mb-3"
-              style={{ background: '#DCE0EB', color: '#334266', border: 'none', cursor: 'pointer' }}>
-              <Icon name="plus" size={16} color="#334266" /> Add task
-            </button>
+            {/* Inline add task */}
+            <div className="flex gap-2 mb-3 items-center">
+              <input
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && taskTitle.trim()) {
+                    await addTask(taskTitle.trim(), taskDue || undefined);
+                    setTaskTitle(''); setTaskDue(''); setTaskDueOpen(false);
+                  }
+                }}
+                placeholder="Add a task…"
+                className="flex-1 px-3 py-2.5 rounded-[12px] text-[14px] outline-none"
+                style={{ background: '#fff', border: '1.5px solid #E8DFCB', color: '#1E1E2E' }}
+              />
+              <button
+                onClick={() => setTaskDueOpen((o) => !o)}
+                style={{ background: taskDue ? '#DCE0EB' : '#F0E5D2', border: 'none', cursor: 'pointer', borderRadius: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                title="Set due date"
+              >📅</button>
+              <button
+                onClick={async () => {
+                  if (!taskTitle.trim()) return;
+                  await addTask(taskTitle.trim(), taskDue || undefined);
+                  setTaskTitle(''); setTaskDue(''); setTaskDueOpen(false);
+                }}
+                style={{ background: '#334266', border: 'none', cursor: 'pointer', borderRadius: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              >
+                <Icon name="plus" size={16} color="#fff" />
+              </button>
+            </div>
+            {taskDueOpen && (
+              <input type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)}
+                className="w-full px-3 py-2 rounded-[12px] text-[13px] outline-none mb-3"
+                style={{ background: '#fff', border: '1.5px solid #E8DFCB' }} />
+            )}
             {tasks.length === 0 ? (
               <div className="text-center py-12">
                 <p style={{ fontSize: 32 }}>📋</p>
@@ -440,8 +513,8 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
         <div className="absolute inset-0 z-50" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowAddRecord(false)}>
           <div className="absolute bottom-0 left-0 right-0 rounded-t-[24px] overflow-y-auto" style={{ background: '#FBF8F1', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
             <div className="px-5 pt-5 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E8DFCB' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E' }}>Add record</h2>
-              <button onClick={() => setShowAddRecord(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7E6B' }}>Cancel</button>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E' }}>{editingRecord ? 'Edit record' : 'Add record'}</h2>
+              <button onClick={() => { setShowAddRecord(false); setEditingRecord(null); setRecTitle(''); setRecContent(''); setRecDate(''); setRecType('milestone'); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7E6B' }}>Cancel</button>
             </div>
             <div className="px-5 py-5 space-y-4">
               <div>
@@ -476,7 +549,7 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
               </div>
               <button onClick={handleSaveRecord} className="w-full py-3.5 rounded-xl font-semibold text-white text-sm"
                 style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
-                Save record
+                {editingRecord ? 'Save changes' : 'Save record'}
               </button>
             </div>
           </div>
@@ -522,41 +595,6 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
               <button onClick={handleSaveRoutine} className="w-full py-3.5 rounded-xl font-semibold text-white text-sm"
                 style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
                 Save routine step
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Add task sheet ────────────────────────────────────── */}
-      {showAddTask && (
-        <div className="absolute inset-0 z-50" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowAddTask(false)}>
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-[24px]" style={{ background: '#FBF8F1', maxHeight: '60vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 pt-5 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E8DFCB' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E' }}>Add task</h2>
-              <button onClick={() => setShowAddTask(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7E6B' }}>Cancel</button>
-            </div>
-            <div className="px-5 py-5 space-y-4">
-              <div>
-                <label className="text-sm font-medium block mb-2" style={{ color: '#1E1E2E' }}>Task *</label>
-                <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="e.g. Pick up prescription"
-                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: '#E8DFCB', background: '#fff' }} />
-              </div>
-              <div>
-                <label className="text-sm font-medium block mb-2" style={{ color: '#1E1E2E' }}>Due date (optional)</label>
-                <input type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: '#E8DFCB', background: '#fff' }} />
-              </div>
-              <button
-                onClick={async () => {
-                  if (!taskTitle.trim()) return;
-                  await addTask(taskTitle.trim(), taskDue || undefined);
-                  setTaskTitle(''); setTaskDue(''); setShowAddTask(false);
-                }}
-                className="w-full py-3.5 rounded-xl font-semibold text-white text-sm"
-                style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
-                Save task
               </button>
             </div>
           </div>

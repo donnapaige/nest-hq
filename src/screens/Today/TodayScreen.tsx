@@ -113,6 +113,14 @@ export function TodayScreen() {
     setWidgetPrefs(loadWidgetPrefs());
     setWidgetOrder(loadWidgetOrder());
     setSectionPrefs(loadSectionPrefs());
+    // Auto-open widget customizer if navigated here with ?widgets=open
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('widgets') === 'open') {
+        setEditingWidgets(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
   }, []);
 
   const loadWidgets = useCallback(async () => {
@@ -207,7 +215,7 @@ export function TodayScreen() {
           greeting={data.greeting}
           householdName={data.household.name}
           hasBadge={isReady}
-          onBell={() => {}}
+          onBell={() => router.push('/feed')}
         />
 
         {!isLoading && (

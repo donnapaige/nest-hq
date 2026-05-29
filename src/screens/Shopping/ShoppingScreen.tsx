@@ -2,15 +2,21 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { TabBar } from '@/src/components/primitives/TabBar';
+import { useHousehold } from '@/src/context/HouseholdContext';
 import { useShoppingLists, SHOPPING_CATEGORIES } from './hooks/useShoppingLists';
+import { useHouseholdTasks } from './hooks/useHouseholdTasks';
 import type { ShoppingList } from './hooks/useShoppingLists';
 
 type ShopTab = 'shopping' | 'tasks';
 
 export function ShoppingScreen() {
   const { lists, status, createList, deleteList, addItem, toggleItem, deleteItem } = useShoppingLists();
+  const { tasks, loading: tasksLoading, addTask, toggleTask, deleteTask } = useHouseholdTasks();
+  const { members } = useHousehold();
 
-  const [tab,        setTab]        = useState<ShopTab>('shopping');
+  const [tab,           setTab]          = useState<ShopTab>('shopping');
+  const [newTaskTitle,  setNewTaskTitle]  = useState('');
+  const [newTaskMember, setNewTaskMember] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [catFilter,  setCatFilter]  = useState<Record<string, string>>({}); // listId → category
   const [newListVal, setNewListVal] = useState('');
@@ -264,10 +270,72 @@ export function ShoppingScreen() {
         )}
 
         {tab === 'tasks' && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p style={{ fontSize: 40 }}>☑️</p>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#334266', marginTop: 12 }}>Tasks coming soon</p>
-            <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 6 }}>Household tasks &amp; reminders will live here.</p>
+          <div>
+            {/* Inline add row */}
+            <div className="flex gap-2 mb-4 mt-1 items-center">
+              <select
+                value={newTaskMember}
+                onChange={(e) => setNewTaskMember(e.target.value)}
+                className="px-3 py-2.5 rounded-[12px] text-[13px] font-semibold outline-none"
+                style={{ background: '#F0E5D2', border: 'none', color: '#334266', flexShrink: 0, maxWidth: 110 }}
+              >
+                <option value="">For…</option>
+                {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              <input
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && newTaskTitle.trim() && newTaskMember) {
+                    await addTask(newTaskMember, newTaskTitle.trim());
+                    setNewTaskTitle('');
+                  }
+                }}
+                placeholder="Add a task…"
+                className="flex-1 px-3 py-2.5 rounded-[12px] text-[14px] outline-none"
+                style={{ background: '#fff', border: '1.5px solid #E8DFCB', color: '#1E1E2E' }}
+              />
+              <button
+                onClick={async () => {
+                  if (!newTaskTitle.trim() || !newTaskMember) return;
+                  await addTask(newTaskMember, newTaskTitle.trim());
+                  setNewTaskTitle('');
+                }}
+                style={{ background: '#334266', border: 'none', cursor: 'pointer', borderRadius: 12, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+            </div>
+
+            {/* Task list */}
+            {tasksLoading ? (
+              <div className="flex flex-col gap-2">{[1,2,3].map((i) => <div key={i} className="h-14 rounded-[12px] animate-pulse" style={{ background: '#E8DFCB' }} />)}</div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-16">
+                <p style={{ fontSize: 36 }}>☑️</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#334266', marginTop: 10 }}>No tasks yet</p>
+                <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 4 }}>Select a member and add their first task above.</p>
+              </div>
+            ) : (
+              <div className="rounded-[16px] overflow-hidden" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB' }}>
+                {tasks.map((task, i) => (
+                  <div key={task.id} className="px-4 py-3.5 flex items-center gap-3" style={{ borderTop: i > 0 ? '1px solid #E8DFCB' : 'none' }}>
+                    <button
+                      onClick={() => toggleTask(task.id)}
+                      style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${task.completed ? task.memberColor : '#C8BFB0'}`, background: task.completed ? task.memberColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}
+                    >
+                      {task.completed && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg>}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p style={{ fontSize: 14, fontWeight: 500, color: task.completed ? '#9BA3AF' : '#1E1E2E', textDecoration: task.completed ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</p>
+                      {task.dueDate && <p style={{ fontSize: 11, color: '#8A7E6B', marginTop: 1 }}>📅 {task.dueDate}</p>}
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0" style={{ background: task.memberColor + '22', color: task.memberColor }}>{task.memberName}</span>
+                    <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C8BFB0', fontSize: 16, lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
