@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Icon } from './Icon';
 
-type TabId = 'today' | 'calendar' | 'chores' | 'shop' | 'bills' | 'family';
+type TabId = 'today' | 'calendar' | 'shop' | 'bills' | 'family';
 
 interface TabBarProps {
   active: TabId;
@@ -12,7 +12,6 @@ interface TabBarProps {
 const TABS: { id: TabId; icon: Parameters<typeof Icon>[0]['name']; label: string; href: string }[] = [
   { id: 'today',    icon: 'sun',      label: 'Today',    href: '/'         },
   { id: 'calendar', icon: 'calendar', label: 'Calendar', href: '/calendar' },
-  { id: 'chores',   icon: 'check',    label: 'Chores',   href: '/chores'   },
   { id: 'shop',     icon: 'cart',     label: 'Lists',    href: '/shop'     },
   { id: 'bills',    icon: 'coin',     label: 'Bills',    href: '/bills'    },
   { id: 'family',   icon: 'users',    label: 'Family',   href: '/family'   },

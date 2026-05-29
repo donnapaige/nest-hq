@@ -158,6 +158,7 @@ export function BillCard({ bill, onTogglePaid, onUpdateAmount, onEdit, onDelete 
           {/* Edit button */}
           <button
             onClick={() => onEdit(bill)}
+            onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center z-10"
             style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer' }}
             aria-label="Edit bill"

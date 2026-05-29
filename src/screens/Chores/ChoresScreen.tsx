@@ -103,7 +103,7 @@ export function ChoresScreen() {
       )}
 
       <FAB label="Add chore" onClick={openNew} />
-      <TabBar active="chores" />
+      <TabBar active="today" />
 
       <ChoreSheet
         open={sheetOpen}

@@ -29,6 +29,9 @@ export default function SetupPage() {
 
   /* Join mode */
   const [inviteCode, setInviteCode] = useState('');
+  const [joinStep,   setJoinStep]   = useState<'code' | 'name'>('code');
+  const [joinMemberId, setJoinMemberId] = useState('');
+  const [joinName,   setJoinName]   = useState('');
 
   /* Shared */
   const [loading, setLoading] = useState(false);
@@ -79,6 +82,30 @@ export default function SetupPage() {
       return;
     }
 
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: me } = await supabase
+      .from('household_members')
+      .select('id')
+      .eq('user_id', user?.id ?? '')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    setLoading(false);
+    if (me) {
+      setJoinMemberId(me.id);
+      setJoinStep('name');
+    } else {
+      await refetch();
+      router.push('/');
+    }
+  };
+
+  const handleJoinName = async () => {
+    if (!joinName.trim() || !joinMemberId) return;
+    setLoading(true);
+    const supabase = createClient();
+    await supabase.from('household_members').update({ name: joinName.trim() }).eq('id', joinMemberId);
     await refetch();
     router.push('/');
   };
@@ -165,7 +192,7 @@ export default function SetupPage() {
                 {loading ? 'Creating your home…' : 'Create my household'}
               </button>
             </>
-          ) : (
+          ) : joinStep === 'code' ? (
             <>
               <div className="text-center py-2">
                 <p className="text-[#1E1E2E] font-semibold text-[15px]">Enter your invite code</p>
@@ -188,6 +215,29 @@ export default function SetupPage() {
                 style={{ background: '#334266', opacity: loading ? 0.6 : 1, border: 'none', cursor: loading ? 'wait' : 'pointer' }}
               >
                 {loading ? 'Joining…' : 'Join Household'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-center py-2">
+                <p className="text-[#1E1E2E] font-semibold text-[15px]">👋 You&apos;re in!</p>
+                <p className="text-[#8A7E6B] text-[13px] mt-1">What should we call you?</p>
+              </div>
+              <input
+                type="text"
+                value={joinName}
+                onChange={(e) => setJoinName(e.target.value)}
+                placeholder="Your name"
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-[#1E1E2E] text-center text-[18px] font-bold outline-none focus:border-[#4C8A8B] transition-colors"
+              />
+              <button
+                onClick={handleJoinName}
+                disabled={loading || !joinName.trim()}
+                className="w-full py-3.5 rounded-xl font-semibold text-white text-sm transition-opacity"
+                style={{ background: '#334266', opacity: loading || !joinName.trim() ? 0.6 : 1, border: 'none', cursor: loading ? 'wait' : 'pointer' }}
+              >
+                {loading ? 'Saving…' : 'Continue'}
               </button>
             </>
           )}

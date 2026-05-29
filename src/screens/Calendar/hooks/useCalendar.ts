@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { createClient } from '@/src/lib/supabase/client';
 import { useHousehold } from '@/src/context/HouseholdContext';
 import { useAuth } from '@/src/context/AuthContext';
+import { logActivity } from '@/src/lib/logActivity';
 import type { CalendarEvent, MemberId } from '@/src/lib/types';
 
 export type CalendarView = 'week' | 'month' | 'agenda';
@@ -82,7 +83,10 @@ export function useCalendar() {
       })
       .select()
       .single();
-    if (!error && data) setEvents((prev) => [...prev, mapRow(data)]);
+    if (!error && data) {
+      setEvents((prev) => [...prev, mapRow(data)]);
+      logActivity({ householdId, action: 'created', entityType: 'event', entityId: data.id, description: `"${ev.title}" added to calendar` });
+    }
   }, [householdId, user]);
 
   const updateEvent = useCallback(async (ev: CalendarEvent) => {
@@ -106,10 +110,12 @@ export function useCalendar() {
   }, [householdId]);
 
   const deleteEvent = useCallback(async (id: string) => {
+    const title = events.find((e) => e.id === id)?.title ?? 'Event';
     setEvents((prev) => prev.filter((e) => e.id !== id));
     const supabase = createClient();
     await supabase.from('events').delete().eq('id', id);
-  }, []);
+    if (householdId) logActivity({ householdId, action: 'deleted', entityType: 'event', entityId: id, description: `"${title}" removed from calendar` });
+  }, [events, householdId]);
 
   return {
     events: visibleEvents,

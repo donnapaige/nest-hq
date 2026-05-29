@@ -108,7 +108,7 @@ export function EventSheet({ open, onClose, initial, onSave, onDelete }: EventSh
           {/* Member picker */}
           {members.length > 0 && (
             <div className="mb-4">
-              <div className="text-[13px] font-medium mb-2" style={{ color: '#8A7E6B' }}>Who</div>
+              <div className="text-[13px] font-medium mb-2" style={{ color: '#8A7E6B' }}>Assigned to</div>
               <div className="flex gap-2 flex-wrap">
                 {members.map((m) => (
                   <button

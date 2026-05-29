@@ -6,11 +6,19 @@ interface WeekStripProps {
   days: DayInfo[];
   selectedDate: string;
   onSelect: (date: string) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export function WeekStrip({ days, selectedDate, onSelect }: WeekStripProps) {
+export function WeekStrip({ days, selectedDate, onSelect, onPrev, onNext }: WeekStripProps) {
   return (
-    <div className="flex gap-1.5 px-5 pb-2">
+    <div className="flex items-center px-3 pb-2 gap-1">
+      <button
+        onClick={onPrev}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 3px', color: '#8A7E6B', flexShrink: 0, lineHeight: 1, fontSize: 18 }}
+        aria-label="Previous week"
+      >‹</button>
+      <div className="flex flex-1 gap-1.5">
       {days.map((day) => {
         const isToday = day.today;
         const isSelected = day.date === selectedDate;
@@ -35,6 +43,12 @@ export function WeekStrip({ days, selectedDate, onSelect }: WeekStripProps) {
           </button>
         );
       })}
+      </div>
+      <button
+        onClick={onNext}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 3px', color: '#8A7E6B', flexShrink: 0, lineHeight: 1, fontSize: 18 }}
+        aria-label="Next week"
+      >›</button>
     </div>
   );
 }
@@ -43,7 +57,7 @@ export function buildWeekDays(weekOffset = 0): DayInfo[] {
   const today = new Date();
   const startOfWeek = new Date(today);
   const dayOfWeek = today.getDay(); // 0=Sun
-  startOfWeek.setDate(today.getDate() - dayOfWeek + 1 + weekOffset * 7); // Start Monday
+  startOfWeek.setDate(today.getDate() - dayOfWeek + weekOffset * 7); // Start Sunday
 
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);

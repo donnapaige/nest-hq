@@ -17,23 +17,22 @@ import { useCalendar } from './hooks/useCalendar';
 import type { CalendarEvent } from '@/src/lib/types';
 
 const todayDate = new Date();
-const TODAY        = todayDate.toISOString().split('T')[0];
+const TODAY        = todayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
 const CURRENT_YEAR  = todayDate.getFullYear();
 const CURRENT_MONTH = todayDate.getMonth(); // 0-based
 
-/** How many Monday-based weeks separate two ISO date strings. */
+/** How many Sunday-based weeks separate two ISO date strings. */
 function weeksBetween(isoA: string, isoB: string): number {
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const a = new Date(isoA + 'T12:00:00');
   const b = new Date(isoB + 'T12:00:00');
-  // Align both to Monday of their week
-  const mondayOf = (d: Date) => {
+  // Align both to Sunday of their week
+  const sundayOf = (d: Date) => {
     const copy = new Date(d);
-    const day = copy.getDay(); // 0=Sun
-    copy.setDate(copy.getDate() - ((day + 6) % 7)); // shift to Monday
+    copy.setDate(copy.getDate() - copy.getDay()); // 0=Sun, so subtract getDay()
     return copy;
   };
-  const diff = mondayOf(b).getTime() - mondayOf(a).getTime();
+  const diff = sundayOf(b).getTime() - sundayOf(a).getTime();
   return Math.round(diff / msPerWeek);
 }
 
@@ -56,7 +55,10 @@ export function CalendarScreen() {
 
   const weekDays = buildWeekDays(weekOffset);
 
-  const selectedDayEvents = events.filter((e) => e.start.startsWith(selectedDate));
+  const selectedDayEvents = events.filter((e) => {
+    const localDate = new Date(e.start).toLocaleDateString('en-CA');
+    return localDate === selectedDate;
+  });
 
   // Display month/year derived from monthOffset
   const displayDate  = new Date(CURRENT_YEAR, CURRENT_MONTH + monthOffset, 1);
@@ -121,8 +123,8 @@ export function CalendarScreen() {
         title={headerTitle}
         view={view}
         onViewChange={setView}
-        onPrev={goToPrev}
-        onNext={goToNext}
+        onPrev={view !== 'week' ? goToPrev : undefined}
+        onNext={view !== 'week' ? goToNext : undefined}
       />
 
       <MemberFilterRow
@@ -132,7 +134,7 @@ export function CalendarScreen() {
       />
 
       {view === 'week' && (
-        <WeekStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} />
+        <WeekStrip days={weekDays} selectedDate={selectedDate} onSelect={setSelectedDate} onPrev={goToPrev} onNext={goToNext} />
       )}
       {/* No strip for month or agenda */}
 

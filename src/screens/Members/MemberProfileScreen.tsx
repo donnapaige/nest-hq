@@ -8,8 +8,9 @@ import { Icon } from '@/src/components/primitives/Icon';
 import { createClient } from '@/src/lib/supabase/client';
 import { useMemberRecords, TYPE_META, type RecordType } from './hooks/useMemberRecords';
 import { useMemberRoutines, ALL_DAYS } from './hooks/useMemberRoutines';
+import { useMemberTasks } from './hooks/useMemberTasks';
 
-type ProfileTab = 'records' | 'routines' | 'notes';
+type ProfileTab = 'records' | 'routines' | 'notes' | 'tasks';
 
 const RECORD_TYPES: RecordType[] = ['milestone', 'health', 'allergy', 'appointment', 'note'];
 
@@ -36,6 +37,7 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
   const member = members.find((m) => m.id === memberId);
   const { records, addRecord, deleteRecord } = useMemberRecords(memberId);
   const { routines, addRoutine, toggleDone, deleteRoutine } = useMemberRoutines(memberId);
+  const { tasks, addTask, toggleTask, deleteTask } = useMemberTasks(memberId);
 
   const [tab,            setTab]           = useState<ProfileTab>('records');
   const [showAddRecord,  setShowAddRecord] = useState(false);
@@ -66,6 +68,11 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
   const [rotTitle, setRotTitle] = useState('');
   const [rotTime,  setRotTime]  = useState('');
   const [rotDays,  setRotDays]  = useState<string[]>([]);
+
+  /* add-task form */
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [taskTitle,   setTaskTitle]   = useState('');
+  const [taskDue,     setTaskDue]     = useState('');
 
   if (!member) return null;
 
@@ -188,8 +195,8 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
         </div>
 
         {/* Tab strip */}
-        <div className="flex px-5 pt-4 gap-2">
-          {(['records', 'routines', 'notes'] as ProfileTab[]).map((t) => (
+        <div className="flex px-5 pt-4 gap-2 overflow-x-auto scrollbar-none">
+          {(['records', 'routines', 'notes', 'tasks'] as ProfileTab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -314,6 +321,41 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── Tasks tab ───────────────────────────────────── */}
+        {tab === 'tasks' && (
+          <div className="px-5 mt-4">
+            <button onClick={() => setShowAddTask(true)} className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm mb-3"
+              style={{ background: '#DCE0EB', color: '#334266', border: 'none', cursor: 'pointer' }}>
+              <Icon name="plus" size={16} color="#334266" /> Add task
+            </button>
+            {tasks.length === 0 ? (
+              <div className="text-center py-12">
+                <p style={{ fontSize: 32 }}>📋</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#8A7E6B', marginTop: 8 }}>No tasks yet</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {tasks.map((task) => (
+                  <div key={task.id} className="rounded-[14px] px-4 py-3.5 flex items-center gap-3" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB' }}>
+                    <button onClick={() => toggleTask(task.id)}
+                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                      style={{ borderColor: task.completed ? '#2D6A4F' : '#E8DFCB', background: task.completed ? '#2D6A4F' : 'transparent', cursor: 'pointer' }}>
+                      {task.completed && <Icon name="check" size={12} color="#fff" stroke={2.5} />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p style={{ fontSize: 15, fontWeight: 600, color: task.completed ? '#9BA3AF' : '#1E1E2E', textDecoration: task.completed ? 'line-through' : 'none' }}>{task.title}</p>
+                      {task.dueDate && <p style={{ fontSize: 11, color: '#8A7E6B', marginTop: 2 }}>📅 Due {new Date(task.dueDate + 'T12:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</p>}
+                    </div>
+                    <button onClick={() => deleteTask(task.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                      <Icon name="trash" size={15} color="#C65A3A" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -480,6 +522,41 @@ export function MemberProfileScreen({ memberId }: { memberId: string }) {
               <button onClick={handleSaveRoutine} className="w-full py-3.5 rounded-xl font-semibold text-white text-sm"
                 style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
                 Save routine step
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add task sheet ────────────────────────────────────── */}
+      {showAddTask && (
+        <div className="absolute inset-0 z-50" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowAddTask(false)}>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-[24px]" style={{ background: '#FBF8F1', maxHeight: '60vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid #E8DFCB' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E' }}>Add task</h2>
+              <button onClick={() => setShowAddTask(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8A7E6B' }}>Cancel</button>
+            </div>
+            <div className="px-5 py-5 space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-2" style={{ color: '#1E1E2E' }}>Task *</label>
+                <input type="text" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)}
+                  placeholder="e.g. Pick up prescription"
+                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: '#E8DFCB', background: '#fff' }} />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-2" style={{ color: '#1E1E2E' }}>Due date (optional)</label>
+                <input type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border text-sm outline-none" style={{ borderColor: '#E8DFCB', background: '#fff' }} />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!taskTitle.trim()) return;
+                  await addTask(taskTitle.trim(), taskDue || undefined);
+                  setTaskTitle(''); setTaskDue(''); setShowAddTask(false);
+                }}
+                className="w-full py-3.5 rounded-xl font-semibold text-white text-sm"
+                style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
+                Save task
               </button>
             </div>
           </div>

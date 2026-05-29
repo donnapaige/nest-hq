@@ -233,21 +233,6 @@ export function TodayScreen() {
           </div>
         )}
 
-        {isReady && data.choresDueToday.length > 0 && (
-          <div className="px-5 mt-5">
-            <div className="flex items-center justify-between mb-3">
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>Chores due today</p>
-              <span style={{ fontSize: 12, color: '#8A7E6B' }}>{data.choresDueToday.length} left</span>
-            </div>
-            <div className="flex gap-[10px] overflow-x-auto scrollbar-none -mx-5 px-5 pb-1">
-              {data.choresDueToday.map((chore) => (
-                <div key={chore.id} onClick={() => router.push('/chores')} style={{ cursor: 'pointer' }}>
-                  <ChoreCard chore={chore} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── Quick Summary widgets ─────────────────────────────── */}
         {sectionPrefs.summary && (

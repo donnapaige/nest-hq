@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { createClient } from '@/src/lib/supabase/client';
 import { useHousehold } from '@/src/context/HouseholdContext';
+import { logActivity } from '@/src/lib/logActivity';
 import type { Bill } from '@/src/lib/types';
 
 function mapRow(r: Record<string, unknown>): Bill {
@@ -122,14 +123,19 @@ export function useBills() {
       })
       .select()
       .single();
-    if (!error && data) setBills((prev) => [...prev, mapRow(data)]);
+    if (!error && data) {
+      setBills((prev) => [...prev, mapRow(data)]);
+      logActivity({ householdId, action: 'created', entityType: 'bill', entityId: data.id, description: `"${bill.name}" bill added` });
+    }
   }, [householdId]);
 
   const deleteBill = useCallback(async (id: string) => {
+    const name = bills.find((b) => b.id === id)?.name ?? 'Bill';
     setBills((prev) => prev.filter((b) => b.id !== id));
     const supabase = createClient();
     await supabase.from('bills').delete().eq('id', id);
-  }, []);
+    if (householdId) logActivity({ householdId, action: 'deleted', entityType: 'bill', entityId: id, description: `"${name}" bill removed` });
+  }, [bills, householdId]);
 
   return { bills, status, togglePaid, addBill, updateBill, updateAmount, deleteBill };
 }

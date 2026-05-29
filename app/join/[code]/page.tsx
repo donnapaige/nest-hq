@@ -14,9 +14,12 @@ export default function JoinPage({ params }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const { refetch } = useHousehold();
-  const [status, setStatus] = useState<'loading' | 'joining' | 'error' | 'done'>('loading');
+  const [status, setStatus] = useState<'loading' | 'joining' | 'error' | 'naming' | 'done'>('loading');
   const [message, setMessage] = useState('');
   const [code, setCode] = useState('');
+  const [memberId, setMemberId] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
 
   useEffect(() => {
     params.then((p) => setCode(p.code));
@@ -31,37 +34,49 @@ export default function JoinPage({ params }: Props) {
   async function join() {
     setStatus('joining');
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from('households')
-      .select('id, name')
-      .eq('invite_code', code)
-      .single();
 
-    if (error || !data) {
-      setStatus('error');
-      setMessage('This invite link is invalid or has expired.');
-      return;
-    }
-
-    const { error: joinErr } = await supabase.rpc('join_household', {
-      p_household_id: data.id,
-      p_invite_code:  code,
+    const { error: joinErr } = await supabase.rpc('join_household_by_code', {
+      p_invite_code: code,
     });
 
     if (joinErr) {
       setStatus('error');
-      setMessage(joinErr.message || 'Could not join household. Try again.');
+      setMessage(joinErr.message || 'This invite link is invalid or has expired.');
       return;
     }
 
+    const { data: me } = await supabase
+      .from('household_members')
+      .select('id')
+      .eq('user_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (me) {
+      setMemberId(me.id);
+      setStatus('naming');
+    } else {
+      await refetch();
+      setStatus('done');
+      setTimeout(() => router.replace('/'), 1500);
+    }
+  }
+
+  async function saveName() {
+    if (!nameInput.trim() || !memberId) return;
+    setNameSaving(true);
+    const supabase = createClient();
+    await supabase.from('household_members').update({ name: nameInput.trim() }).eq('id', memberId);
     await refetch();
+    setNameSaving(false);
     setStatus('done');
-    setTimeout(() => router.replace('/'), 1500);
+    setTimeout(() => router.replace('/'), 1000);
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FBF8F1] px-6 text-center font-sans">
-      {status === 'loading' || status === 'joining' ? (
+      {(status === 'loading' || status === 'joining') && (
         <>
           <p style={{ fontSize: 40 }}>🏠</p>
           <p style={{ fontSize: 18, fontWeight: 700, color: '#334266', marginTop: 16 }}>
@@ -69,16 +84,54 @@ export default function JoinPage({ params }: Props) {
           </p>
           <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 8 }}>Just a moment</p>
         </>
-      ) : status === 'done' ? (
+      )}
+
+      {status === 'naming' && (
+        <>
+          <p style={{ fontSize: 40 }}>👋</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#334266', marginTop: 16 }}>You&apos;re in!</p>
+          <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 6, marginBottom: 24 }}>What should we call you?</p>
+          <input
+            type="text"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') saveName(); }}
+            placeholder="Your name"
+            autoFocus
+            style={{
+              width: '100%', maxWidth: 320, padding: '14px 16px', borderRadius: 14,
+              border: '1.5px solid #E8DFCB', fontSize: 16, fontWeight: 600,
+              color: '#1E1E2E', background: '#fff', outline: 'none', textAlign: 'center',
+              marginBottom: 12,
+            }}
+          />
+          <button
+            onClick={saveName}
+            disabled={nameSaving || !nameInput.trim()}
+            style={{
+              width: '100%', maxWidth: 320, padding: '14px 0', borderRadius: 14,
+              background: '#334266', color: '#fff', border: 'none', fontSize: 15,
+              fontWeight: 700, cursor: nameSaving ? 'wait' : 'pointer',
+              opacity: !nameInput.trim() ? 0.5 : 1,
+            }}
+          >
+            {nameSaving ? 'Saving…' : 'Continue'}
+          </button>
+        </>
+      )}
+
+      {status === 'done' && (
         <>
           <p style={{ fontSize: 40 }}>🎉</p>
           <p style={{ fontSize: 18, fontWeight: 700, color: '#2D6A4F', marginTop: 16 }}>Welcome home!</p>
           <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 8 }}>Taking you inside…</p>
         </>
-      ) : (
+      )}
+
+      {status === 'error' && (
         <>
           <p style={{ fontSize: 40 }}>😕</p>
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#C65A3A', marginTop: 16 }}>Couldn't join</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#C65A3A', marginTop: 16 }}>Couldn&apos;t join</p>
           <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 8, maxWidth: 280 }}>{message}</p>
           <button
             onClick={() => router.replace('/')}
