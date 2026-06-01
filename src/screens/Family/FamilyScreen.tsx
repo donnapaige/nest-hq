@@ -63,7 +63,7 @@ export function FamilyScreen() {
   const [noteSaving, setNoteSaving] = useState(false);
 
   const currentUser = members.find((m) => m.userId === user?.id);
-  const kids = members.filter((m) => m.access_level === 'child');
+  void currentUser; // kept for potential future use
 
   /* Load feed */
   const loadFeed = useCallback(async () => {
@@ -158,29 +158,10 @@ export function FamilyScreen() {
             <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1E1E2E' }}>Family</h1>
             <p style={{ fontSize: 13, color: '#8A7E6B', marginTop: 1 }}>{householdName}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => router.push('/settings')} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer' }}>
+          <button onClick={() => router.push('/settings')} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#F0E5D2', border: 'none', cursor: 'pointer' }}>
               <Icon name="settings" size={17} color="#334266" />
             </button>
-            <button onClick={openAddNote} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
-              <Icon name="plus" size={17} color="#fff" />
-            </button>
-          </div>
         </div>
-
-        {/* My profile card */}
-        {currentUser && (
-          <div className="px-5 mt-5">
-            <button onClick={() => router.push('/profile')} className="w-full rounded-[16px] px-4 py-4 flex items-center gap-3" style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
-              <Avatar member={currentUser.id} size={44} />
-              <div className="flex-1 text-left">
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{currentUser.name} <span style={{ fontSize: 12, opacity: 0.7 }}>(You)</span></p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{currentUser.role || 'Member'} · {user?.email}</p>
-              </div>
-              <Icon name="chevron" size={16} color="rgba(255,255,255,0.5)" />
-            </button>
-          </div>
-        )}
 
         {/* Members carousel */}
         <div className="px-5 mt-5">
@@ -189,15 +170,23 @@ export function FamilyScreen() {
             <button onClick={() => router.push('/members')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#334266', fontWeight: 700 }}>Manage</button>
           </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
-            {members.map((m) => (
-              <button key={m.id} onClick={() => router.push(`/members/${m.id}`)} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                <Avatar member={m.id} size={52} />
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#334266', maxWidth: 56, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</p>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: m.access_level === 'child' ? '#F4E4C7' : '#DCE0EB', color: m.access_level === 'child' ? '#8B5E17' : '#334266' }}>
-                  {m.access_level === 'child' ? 'Kid' : m.access_level === 'caregiver' ? 'Caregiver' : 'Adult'}
-                </span>
-              </button>
-            ))}
+            {members.map((m) => {
+              const isMe = m.userId === user?.id;
+              return (
+                <button key={m.id} onClick={() => router.push(isMe ? '/profile' : `/members/${m.id}`)} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Avatar member={m.id} size={isMe ? 68 : 52} />
+                    {isMe && (
+                      <span style={{ position: 'absolute', bottom: 0, right: 0, background: '#334266', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #FBF8F1', fontSize: 9, fontWeight: 700, color: '#fff' }}>You</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 11, fontWeight: isMe ? 700 : 600, color: '#334266', maxWidth: isMe ? 72 : 56, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</p>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: m.access_level === 'child' ? '#F4E4C7' : '#DCE0EB', color: m.access_level === 'child' ? '#8B5E17' : '#334266' }}>
+                    {m.access_level === 'child' ? 'Kid' : m.access_level === 'caregiver' ? 'Caregiver' : 'Adult'}
+                  </span>
+                </button>
+              );
+            })}
             <button onClick={() => router.push('/members')} className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
               <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center" style={{ background: '#F0E5D2', border: '2px dashed #E8DFCB' }}>
                 <Icon name="plus" size={20} color="#8A7E6B" />
@@ -207,30 +196,13 @@ export function FamilyScreen() {
           </div>
         </div>
 
-        {/* Kids section */}
-        {kids.length > 0 && (
-          <div className="px-5 mt-6">
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 }}>Kids · {kids.length}</p>
-            <div className="grid grid-cols-2 gap-3">
-              {kids.map((kid) => (
-                <button key={kid.id} onClick={() => router.push(`/members/${kid.id}`)} className="rounded-[16px] p-4 flex flex-col items-center gap-2" style={{ background: '#FBF8F1', border: '1px solid #E8DFCB', cursor: 'pointer' }}>
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: kid.softColor || '#F4E4C7' }}>
-                    <span style={{ fontSize: 26 }}>{kid.emoji || '👧'}</span>
-                  </div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#1E1E2E' }}>{kid.name}</p>
-                  {kid.role && <p style={{ fontSize: 12, color: '#8A7E6B' }}>{kid.role}</p>}
-                  <span style={{ fontSize: 10, color: '#8A7E6B', background: '#F4E4C7', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>View profile →</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ── Family Board ───────────────────────────────────────── */}
         <div className="px-5 mt-6">
           <div className="flex items-center justify-between mb-3">
             <p style={{ fontSize: 11, fontWeight: 700, color: '#8A7E6B', letterSpacing: 0.8, textTransform: 'uppercase' }}>Family Board</p>
-            <p style={{ fontSize: 13, color: '#8A7E6B' }}>Shared references &amp; planning</p>
+            <button onClick={openAddNote} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: '#334266', border: 'none', cursor: 'pointer' }}>
+              <Icon name="plus" size={15} color="#fff" />
+            </button>
           </div>
 
           {/* Notes / Board toggle */}
