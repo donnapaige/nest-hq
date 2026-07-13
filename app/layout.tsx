@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ConfettiProvider } from '@/src/components/ConfettiOverlay';
 import { AuthProvider } from '@/src/context/AuthContext';
@@ -9,7 +9,18 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Nest HQ',
-  description: 'Family household management',
+  description: "Your family's homebase",
+  icons: {
+    apple: '/icons/180.png',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#334266',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
