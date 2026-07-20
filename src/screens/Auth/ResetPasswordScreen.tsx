@@ -98,9 +98,15 @@ export function ResetPasswordScreen() {
             <div className="text-4xl mb-4">⚠️</div>
             <p style={{ fontSize: 14, color: '#C65A3A', marginBottom: 20 }}>{error}</p>
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/login?forgot=1')}
               className="w-full rounded-[12px] font-bold text-white"
-              style={{ height: 48, fontSize: 15, background: '#334266', border: 'none', cursor: 'pointer' }}
+              style={{ height: 48, fontSize: 15, background: '#334266', border: 'none', cursor: 'pointer', marginBottom: 10 }}
+            >
+              Request a new link
+            </button>
+            <button
+              onClick={() => router.push('/login')}
+              style={{ fontSize: 13, color: '#8A7E6B', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               Back to sign in
             </button>

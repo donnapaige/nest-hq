@@ -1,21 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/src/lib/supabase/client';
 
 export function LoginScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Forgot password state
   const [showPassword, setShowPassword] = useState(false);
-
   const [forgotOpen, setForgotOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('forgot') === '1') setForgotOpen(true);
+  }, [searchParams]);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
