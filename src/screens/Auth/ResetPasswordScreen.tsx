@@ -17,30 +17,30 @@ export function ResetPasswordScreen() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    // Supabase surfaces errors as query params when the link is invalid/expired
+    // Check for error params in query string or hash
     const urlError = searchParams.get('error_code') || searchParams.get('error');
-    if (urlError) {
+    const hashError = typeof window !== 'undefined' && window.location.hash.includes('error=');
+    if (urlError || hashError) {
       setError('Reset link is invalid or has expired. Please request a new one.');
       return;
     }
 
     const supabase = createClient();
 
-    // PKCE flow: Supabase sends ?code=... in the URL
-    const code = searchParams.get('code');
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) setError('Reset link is invalid or has expired. Please request a new one.');
-        else setReady(true);
-      });
-      return;
-    }
-
-    // Hash-based flow: listen for PASSWORD_RECOVERY event
+    // Implicit flow: Supabase embeds tokens in the URL hash and fires PASSWORD_RECOVERY
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
-    return () => subscription.unsubscribe();
+
+    // Timeout fallback — if no event fires after 8 seconds, show an error
+    const timeout = setTimeout(() => {
+      setError('Reset link is invalid or has expired. Please request a new one.');
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [searchParams]);
 
   const handleReset = async (e: React.FormEvent) => {
