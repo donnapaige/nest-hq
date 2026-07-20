@@ -17,6 +17,13 @@ export function ResetPasswordScreen() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    // Supabase surfaces errors as query params when the link is invalid/expired
+    const urlError = searchParams.get('error_code') || searchParams.get('error');
+    if (urlError) {
+      setError('Reset link is invalid or has expired. Please request a new one.');
+      return;
+    }
+
     const supabase = createClient();
 
     // PKCE flow: Supabase sends ?code=... in the URL
