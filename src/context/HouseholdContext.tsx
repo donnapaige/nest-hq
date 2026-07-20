@@ -38,6 +38,8 @@ interface HouseholdContextValue {
   // Multi-household
   householdsList: HouseholdSummary[];
   switchHousehold: (id: string) => Promise<void>;
+  leaveHousehold: () => Promise<void>;
+  createHousehold: (name: string, memberName: string, emoji: string, color: string, softColor: string) => Promise<void>;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue>({
@@ -54,6 +56,8 @@ const HouseholdContext = createContext<HouseholdContextValue>({
   updateCurrency: async () => {},
   householdsList: [],
   switchHousehold: async () => {},
+  leaveHousehold: async () => {},
+  createHousehold: async () => {},
 });
 
 const PUBLIC_PATHS = ['/login', '/signup', '/setup', '/auth', '/join'];
@@ -195,6 +199,43 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     await fetchHousehold();
   }, [fetchHousehold]);
 
+  const leaveHousehold = useCallback(async () => {
+    if (!user || !householdId) return;
+    const supabase = createClient();
+    await supabase
+      .from('household_members')
+      .delete()
+      .eq('household_id', householdId)
+      .eq('user_id', user.id);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    await fetchHousehold();
+  }, [user, householdId, fetchHousehold]);
+
+  const createHousehold = useCallback(async (
+    name: string,
+    memberName: string,
+    emoji: string,
+    color: string,
+    softColor: string,
+  ) => {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc('create_household', {
+      p_name:         name,
+      p_member_name:  memberName,
+      p_member_emoji: emoji,
+      p_member_color: color,
+      p_member_soft:  softColor,
+    });
+    if (error) throw error;
+    // Switch to the new household if the RPC returns its id
+    if (data && typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, data);
+    }
+    await fetchHousehold();
+  }, [fetchHousehold]);
+
   const currentMember = members.find((m) => m.userId === user?.id) ?? null;
 
   const getMemberById = useCallback(
@@ -229,6 +270,8 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
         updateCurrency,
         householdsList,
         switchHousehold,
+        leaveHousehold,
+        createHousehold,
       }}
     >
       {children}

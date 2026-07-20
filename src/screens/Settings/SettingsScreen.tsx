@@ -8,16 +8,27 @@ import { TabBar } from '@/src/components/primitives/TabBar';
 import { Avatar } from '@/src/components/primitives/Avatar';
 import { BottomSheet } from '@/src/components/primitives/BottomSheet';
 import { JoinHouseholdSheet } from './sheets/JoinHouseholdSheet';
+import { CreateHouseholdSheet } from './sheets/CreateHouseholdSheet';
 
 export function SettingsScreen() {
   const { signOut, user } = useAuth();
-  const { householdName, householdId, members, currentMember, householdsList, switchHousehold, refetch } = useHousehold();
+  const { householdName, householdId, members, currentMember, householdsList, switchHousehold, leaveHousehold, refetch } = useHousehold();
   const router = useRouter();
 
-  const [joinSheetOpen,  setJoinSheetOpen]  = useState(false);
-  const [notifsOpen,     setNotifsOpen]     = useState(false);
+  const [joinSheetOpen,   setJoinSheetOpen]   = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [leaveConfirm,    setLeaveConfirm]    = useState(false);
+  const [leaveLoading,    setLeaveLoading]    = useState(false);
+  const [notifsOpen,      setNotifsOpen]      = useState(false);
 
   const handleSignOut = async () => { await signOut(); router.push('/login'); };
+
+  const handleLeave = async () => {
+    setLeaveLoading(true);
+    await leaveHousehold();
+    setLeaveLoading(false);
+    setLeaveConfirm(false);
+  };
 
   const isOwner  = currentMember && members[0]?.id === currentMember.id;
   const roleLabel = currentMember?.role || 'Member';
@@ -137,6 +148,25 @@ export function SettingsScreen() {
               subtitle="Enter an invite code to join"
               onPress={() => setJoinSheetOpen(true)}
             />
+
+            <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />
+
+            <ManageRow
+              icon="🏠"
+              label="Create New Household"
+              subtitle="Start a separate household"
+              onPress={() => setCreateSheetOpen(true)}
+            />
+
+            <div style={{ height: 1, background: '#E8DFCB', marginLeft: 60 }} />
+
+            <ManageRow
+              icon="🚪"
+              label="Leave Household"
+              subtitle={`Remove yourself from ${householdName}`}
+              onPress={() => setLeaveConfirm(true)}
+              danger
+            />
           </div>
         </div>
 
@@ -166,6 +196,38 @@ export function SettingsScreen() {
         onClose={() => setJoinSheetOpen(false)}
         onJoined={refetch}
       />
+
+      <CreateHouseholdSheet
+        open={createSheetOpen}
+        onClose={() => setCreateSheetOpen(false)}
+      />
+
+      {/* Leave household confirmation */}
+      <BottomSheet open={leaveConfirm} onClose={() => setLeaveConfirm(false)} snapPercent={40}>
+        <div className="pt-3 pb-6">
+          <p style={{ fontSize: 18, fontWeight: 800, color: '#1E1E2E', marginBottom: 8 }}>Leave Household?</p>
+          <p style={{ fontSize: 14, color: '#8A7E6B', marginBottom: 24, lineHeight: 1.5 }}>
+            You'll be removed from <strong>{householdName}</strong>.
+            {householdsList.length > 1
+              ? ' You\'ll be switched to your other household.'
+              : ' You\'ll need to join or create a new one to continue.'}
+          </p>
+          <button
+            onClick={handleLeave}
+            disabled={leaveLoading}
+            className="w-full rounded-[12px] font-bold text-white text-[15px]"
+            style={{ height: 48, background: '#C65A3A', border: 'none', cursor: leaveLoading ? 'wait' : 'pointer', opacity: leaveLoading ? 0.6 : 1, marginBottom: 10 }}
+          >
+            {leaveLoading ? 'Leaving…' : 'Yes, leave household'}
+          </button>
+          <button
+            onClick={() => setLeaveConfirm(false)}
+            style={{ width: '100%', fontSize: 14, color: '#8A7E6B', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+        </div>
+      </BottomSheet>
 
       <BottomSheet open={notifsOpen} onClose={() => setNotifsOpen(false)} snapPercent={55}>
         <div className="pt-3 pb-6">
@@ -197,18 +259,18 @@ export function SettingsScreen() {
   );
 }
 
-function ManageRow({ icon, label, subtitle, onPress }: { icon: string; label: string; subtitle: string; onPress: () => void }) {
+function ManageRow({ icon, label, subtitle, onPress, danger }: { icon: string; label: string; subtitle: string; onPress: () => void; danger?: boolean }) {
   return (
     <button
       onClick={onPress}
       className="w-full px-4 py-4 flex items-center gap-3 text-left"
       style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
     >
-      <div className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 text-[20px]" style={{ background: '#F0E5D2' }}>
+      <div className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 text-[20px]" style={{ background: danger ? '#FCE8E2' : '#F0E5D2' }}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p style={{ fontSize: 15, fontWeight: 600, color: '#1E1E2E' }}>{label}</p>
+        <p style={{ fontSize: 15, fontWeight: 600, color: danger ? '#C65A3A' : '#1E1E2E' }}>{label}</p>
         <p style={{ fontSize: 12, color: '#8A7E6B', marginTop: 1 }}>{subtitle}</p>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8BFB0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
