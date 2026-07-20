@@ -36,6 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // If a recovery event fires anywhere in the app (tokens often land at root),
+      // redirect to the reset screen so the user can set a new password.
+      if (_event === 'PASSWORD_RECOVERY' && typeof window !== 'undefined') {
+        if (!window.location.pathname.startsWith('/auth/reset')) {
+          window.location.replace('/auth/reset');
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
