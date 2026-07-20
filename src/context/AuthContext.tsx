@@ -41,7 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // redirect to the reset screen so the user can set a new password.
       if (_event === 'PASSWORD_RECOVERY' && typeof window !== 'undefined') {
         if (!window.location.pathname.startsWith('/auth/reset')) {
-          window.location.replace('/auth/reset');
+          // Preserve the hash so Supabase can re-detect the tokens on the reset page
+          window.location.replace('/auth/reset' + window.location.hash);
         }
       }
     });

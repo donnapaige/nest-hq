@@ -27,12 +27,18 @@ export function ResetPasswordScreen() {
 
     const supabase = createClient();
 
-    // Implicit flow: Supabase embeds tokens in the URL hash and fires PASSWORD_RECOVERY
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
+    // If we were redirected here after PASSWORD_RECOVERY already fired,
+    // there will be an active session — show the form immediately.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setReady(true);
     });
 
-    // Timeout fallback — if no event fires after 8 seconds, show an error
+    // Also listen for the event in case tokens are being processed now
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true);
+    });
+
+    // Timeout fallback
     const timeout = setTimeout(() => {
       setError('Reset link is invalid or has expired. Please request a new one.');
     }, 8000);
