@@ -116,7 +116,7 @@ export function SignupScreen() {
           <Field label="Your full name" type="text" value={fullName} onChange={setFullName} placeholder="e.g. Donna Paige" required />
           <Field label="Household name" type="text" value={householdName} onChange={setHouseholdName} placeholder="e.g. The Paige Family" />
           <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
-          <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="At least 6 characters" required />
+          <PasswordField label="Password" value={password} onChange={setPassword} placeholder="At least 6 characters" required />
 
           <button
             type="submit"
@@ -169,16 +169,62 @@ function Field({
         placeholder={placeholder}
         required={required}
         className="w-full px-4 rounded-[12px] border outline-none"
-        style={{
-          height: 44,
-          fontSize: 15,
-          background: '#F6F3EC',
-          border: '1.5px solid #E8DFCB',
-          color: '#333333',
-        }}
+        style={{ height: 44, fontSize: 15, background: '#F6F3EC', border: '1.5px solid #E8DFCB', color: '#333333' }}
         onFocus={(e) => (e.target.style.borderColor = '#334266')}
         onBlur={(e) => (e.target.style.borderColor = '#E8DFCB')}
       />
     </div>
+  );
+}
+
+function PasswordField({
+  label, value, onChange, placeholder, required,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  const toggle = useCallback(() => setShow(v => !v), []);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label style={{ fontSize: 13, fontWeight: 600, color: '#8A7E6B' }}>{label}</label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          className="w-full px-4 rounded-[12px] border outline-none"
+          style={{ height: 44, fontSize: 15, background: '#F6F3EC', border: '1.5px solid #E8DFCB', color: '#333333', paddingRight: 44 }}
+          onFocus={(e) => (e.target.style.borderColor = '#334266')}
+          onBlur={(e) => (e.target.style.borderColor = '#E8DFCB')}
+        />
+        <button
+          type="button"
+          onClick={toggle}
+          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#8A7E6B' }}
+          aria-label={show ? 'Hide password' : 'Show password'}
+        >
+          <EyeIcon open={show} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
   );
 }
