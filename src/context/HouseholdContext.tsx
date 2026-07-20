@@ -56,7 +56,7 @@ const HouseholdContext = createContext<HouseholdContextValue>({
   switchHousehold: async () => {},
 });
 
-const PUBLIC_PATHS = ['/login', '/signup', '/setup'];
+const PUBLIC_PATHS = ['/login', '/signup', '/setup', '/auth', '/join'];
 const STORAGE_KEY  = 'nest-hq-active-household';
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }) {
