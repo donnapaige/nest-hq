@@ -27,18 +27,26 @@ export function ResetPasswordScreen() {
 
     const supabase = createClient();
 
-    // If we were redirected here after PASSWORD_RECOVERY already fired,
-    // there will be an active session — show the form immediately.
+    // ?code= in URL: exchange it for a session (no verifier needed with implicit flow)
+    const code = searchParams.get('code');
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) setError('Reset link is invalid or has expired. Please request a new one.');
+        else setReady(true);
+      });
+      return;
+    }
+
+    // No code — check for an existing recovery session (e.g. redirected from AuthContext)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setReady(true);
     });
 
-    // Also listen for the event in case tokens are being processed now
+    // Also listen for implicit-flow PASSWORD_RECOVERY event (hash-based tokens)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true);
     });
 
-    // Timeout fallback
     const timeout = setTimeout(() => {
       setError('Reset link is invalid or has expired. Please request a new one.');
     }, 8000);
